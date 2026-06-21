@@ -467,6 +467,212 @@
       color: var(--brown-lt);
     }
 
+    /* ─── LUCKY DIP BOX ───────────────────────────────────────── */
+    #lucky-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+
+    .lucky-stage {
+      position: relative;
+      width: min(320px, 90vw);
+      height: 280px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    /* The box */
+    .lucky-box {
+      position: absolute;
+      bottom: 0;
+      width: 200px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .box-body {
+      width: 200px;
+      height: 140px;
+      background: linear-gradient(160deg, #e8c49a, #c49060);
+      border-radius: 8px 8px 14px 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.2), inset 0 2px 4px rgba(255,255,255,.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .box-body::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 0; right: 0;
+      height: 3px;
+      background: rgba(255,255,255,.25);
+      transform: translateY(-50%);
+    }
+    .box-body::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 50%;
+      width: 3px;
+      background: rgba(255,255,255,.25);
+      transform: translateX(-50%);
+    }
+    .box-shine { font-size: 1.4rem; opacity: .4; }
+
+    .box-lid {
+      width: 220px;
+      height: 44px;
+      background: linear-gradient(160deg, #f2d4a8, #d4a060);
+      border-radius: 10px;
+      margin: 0 auto -6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.15), inset 0 2px 4px rgba(255,255,255,.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+      transition: transform .5s cubic-bezier(.34, 1.56, .64, 1);
+      transform-origin: center bottom;
+    }
+    .box-lid.open { transform: rotate(-70deg) translateX(-40px) translateY(-20px); }
+    .box-bow {
+      width: 36px; height: 20px;
+      border-radius: 50%;
+      border: 4px solid var(--rose);
+      position: absolute;
+      top: -14px; left: 50%; transform: translateX(-50%);
+    }
+    .box-bow::before, .box-bow::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--rose);
+      top: -5px;
+    }
+    .box-bow::before { left: -14px; }
+    .box-bow::after  { right: -14px; }
+
+    /* Item popping out */
+    .lucky-pop {
+      position: absolute;
+      bottom: 140px;
+      left: 50%;
+      transform: translateX(-50%) scale(0) translateY(0);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      text-align: center;
+      width: 180px;
+      transition: transform .5s cubic-bezier(.34, 1.56, .64, 1) .35s, opacity .4s ease .35s;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .lucky-pop.visible {
+      transform: translateX(-50%) scale(1) translateY(-20px);
+      opacity: 1;
+    }
+    .lucky-pop .lp-icon { font-size: 3rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,.2)); }
+    .lucky-pop .lp-name {
+      font-family: 'Mitr', sans-serif;
+      font-size: 1rem;
+      color: var(--brown);
+      background: white;
+      padding: .3rem .8rem;
+      border-radius: 99px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.12);
+      line-height: 1.4;
+    }
+    /* Sparkles */
+    .sparkle {
+      position: absolute;
+      font-size: 1.2rem;
+      opacity: 0;
+      transition: none;
+      pointer-events: none;
+    }
+    .sparkle.pop {
+      animation: sparkle-fly .8s ease-out forwards;
+    }
+    @keyframes sparkle-fly {
+      0%   { opacity: 1; transform: translate(0,0) scale(1); }
+      100% { opacity: 0; transform: var(--tx) scale(0); }
+    }
+
+    /* ─── DICE ROLL ────────────────────────────────────────────── */
+    #dice-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+
+    .dice-stage {
+      perspective: 600px;
+      width: 140px;
+      height: 140px;
+    }
+
+    .dice-3d {
+      width: 140px;
+      height: 140px;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateX(20deg) rotateY(30deg);
+      transition: transform 1.6s cubic-bezier(.22, 1, .36, 1);
+    }
+    .dice-3d.rolling {
+      animation: dice-tumble 1.4s cubic-bezier(.22, 1, .36, 1) forwards;
+    }
+    @keyframes dice-tumble {
+      0%   { transform: rotateX(20deg)  rotateY(30deg); }
+      30%  { transform: rotateX(340deg) rotateY(200deg) rotateZ(90deg); }
+      60%  { transform: rotateX(580deg) rotateY(420deg) rotateZ(180deg); }
+      100% { transform: var(--dice-end-transform); }
+    }
+
+    .dice-face {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      background: white;
+      border-radius: 24px;
+      border: 3px solid rgba(200,150,120,.3);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      backface-visibility: hidden;
+    }
+    .face-front  { transform: translateZ(70px); }
+    .face-back   { transform: rotateY(180deg) translateZ(70px); }
+    .face-right  { transform: rotateY(90deg)  translateZ(70px); }
+    .face-left   { transform: rotateY(-90deg) translateZ(70px); }
+    .face-top    { transform: rotateX(90deg)  translateZ(70px); }
+    .face-bottom { transform: rotateX(-90deg) translateZ(70px); }
+
+    .dice-result-row {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .5rem;
+      min-height: 80px;
+    }
+    .dice-act-name {
+      font-family: 'Mitr', sans-serif;
+      font-size: 1.2rem;
+      color: var(--brown);
+      text-align: center;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .4s .2s, transform .4s .2s;
+    }
+    .dice-act-name.visible { opacity: 1; transform: none; }
+    .dice-act-hint {
+      font-size: .85rem;
+      color: var(--brown-lt);
+      text-align: center;
+      opacity: 0;
+      transition: opacity .4s .35s;
+    }
+    .dice-act-hint.visible { opacity: 1; }
+
     /* ─── Hidden utility ───────────────────────────────────────── */
     .hidden { display: none !important; }
 
@@ -493,11 +699,13 @@
   <p class="subtitle">เลือกกิจกรรมสุ่มที่จะทำวันนี้ — ห้องนี้สำหรับคนชอบผจญภัยและลองสิ่งใหม่</p>
 
   <!-- Mode toggle -->
-  <div class="mode-toggle">
+  <div class="mode-toggle" style="flex-wrap:wrap;border-radius:16px;justify-content:center;">
     <button id="btn-mode-card"    class="active" onclick="setMode('card')">🃏 พลิกไพ่</button>
     <button id="btn-mode-wheel"   onclick="setMode('wheel')">🎡 วงล้อ</button>
     <button id="btn-mode-slot"    onclick="setMode('slot')">🎰 สล็อต</button>
     <button id="btn-mode-scratch" onclick="setMode('scratch')">🪙 ขูดรางวัล</button>
+    <button id="btn-mode-lucky"   onclick="setMode('lucky')">🎁 กล่องลุ้น</button>
+    <button id="btn-mode-dice"    onclick="setMode('dice')">🎲 ทอยลูกเต๋า</button>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════ -->
@@ -599,6 +807,68 @@
     </div>
   </section>
 
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- LUCKY DIP BOX MODE                                        -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <section id="lucky-section" class="hidden">
+    <p class="instruction">แตะกล่องเพื่อเปิดและรับกิจกรรมสุ่ม! 🎁</p>
+
+    <div class="lucky-stage">
+      <div class="lucky-pop" id="luckyPop">
+        <div class="lp-icon" id="luckyPopIcon">🌸</div>
+        <div class="lp-name" id="luckyPopName"></div>
+      </div>
+
+      <div class="lucky-box" id="luckyBox" onclick="openBox()">
+        <div class="box-lid" id="boxLid">
+          <div class="box-bow"></div>
+        </div>
+        <div class="box-body">
+          <span class="box-shine">✨</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-toast" id="luckyResult">
+      <div class="toast-label">กิจกรรมของคุณคือ</div>
+      <div class="toast-icon" id="luckyIcon"></div>
+      <div class="toast-name" id="luckyName"></div>
+      <div style="font-size:.8rem;color:var(--brown-lt);margin-top:.25rem" id="luckyHint"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-reset" onclick="resetBox()">↺ กล่องใหม่</button>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- DICE ROLL MODE                                            -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <section id="dice-section" class="hidden">
+    <p class="instruction">ทอยลูกเต๋าเพื่อรับกิจกรรม — แต่ละหน้าซ่อนกิจกรรมไว้!</p>
+
+    <div class="dice-stage" onclick="rollDice()" style="cursor:pointer">
+      <div class="dice-3d" id="dice3d">
+        <div class="dice-face face-front"  id="df0">🌸</div>
+        <div class="dice-face face-back"   id="df1">🌿</div>
+        <div class="dice-face face-right"  id="df2">☁️</div>
+        <div class="dice-face face-left"   id="df3">📸</div>
+        <div class="dice-face face-top"    id="df4">☕</div>
+        <div class="dice-face face-bottom" id="df5">✏️</div>
+      </div>
+    </div>
+
+    <div class="dice-result-row">
+      <div class="dice-act-name" id="diceActName"></div>
+      <div class="dice-act-hint" id="diceActHint"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-pick" onclick="rollDice()">🎲 ทอย!</button>
+      <button class="btn-reset" onclick="resetDice()">↺ เริ่มใหม่</button>
+    </div>
+  </section>
+
   <a class="back-link" href="index.html">← กลับแผนที่</a>
 </div>
 
@@ -637,7 +907,7 @@ for (let i = 0; i < 18; i++) {
 }
 
 // ─── Mode switching ───────────────────────────────────────────────
-const MODES = ['card', 'wheel', 'slot', 'scratch'];
+const MODES = ['card', 'wheel', 'slot', 'scratch', 'lucky', 'dice'];
 function setMode(mode) {
   MODES.forEach(m => {
     document.getElementById(m + '-section').classList.toggle('hidden', m !== mode);
@@ -646,6 +916,8 @@ function setMode(mode) {
   if (mode === 'wheel' && !wheelDrawn) drawWheel();
   if (mode === 'slot')    buildSlot();
   if (mode === 'scratch') resetScratch();
+  if (mode === 'lucky')   resetBox();
+  if (mode === 'dice')    resetDice();
 }
 
 // ─── CARD FLIP ────────────────────────────────────────────────────
@@ -1025,6 +1297,139 @@ function revealAll() {
   ctx.globalCompositeOperation = 'destination-out';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   document.getElementById('scratchPct').textContent = '🎉 เปิดเผยแล้ว!';
+}
+
+// ─── LUCKY DIP BOX ───────────────────────────────────────────────
+let boxOpened = false;
+let luckyAct  = null;
+
+function resetBox() {
+  boxOpened = false;
+  luckyAct  = null;
+  document.getElementById('boxLid').classList.remove('open');
+  document.getElementById('luckyPop').classList.remove('visible');
+  document.getElementById('luckyResult').classList.remove('visible');
+  document.getElementById('luckyBox').style.cursor = 'pointer';
+  // Remove any old sparkles
+  document.querySelectorAll('.sparkle').forEach(s => s.remove());
+}
+
+function openBox() {
+  if (boxOpened) return;
+  boxOpened = true;
+  document.getElementById('luckyBox').style.cursor = 'default';
+
+  luckyAct = activities[Math.floor(Math.random() * activities.length)];
+
+  // Open lid
+  document.getElementById('boxLid').classList.add('open');
+
+  // Sparkles
+  const stage = document.querySelector('.lucky-stage');
+  const sparklePairs = [
+    { tx:'translate(-60px,-80px)', emoji:'✨' },
+    { tx:'translate(60px,-80px)',  emoji:'🌟' },
+    { tx:'translate(-90px,-40px)', emoji:'💫' },
+    { tx:'translate(90px,-40px)',  emoji:'⭐' },
+    { tx:'translate(0px,-100px)',  emoji:'✨' },
+    { tx:'translate(-50px,-110px)',emoji:'🌸' },
+    { tx:'translate(50px,-110px)', emoji:'🌸' },
+  ];
+  sparklePairs.forEach(({ tx, emoji }, i) => {
+    const sp = document.createElement('div');
+    sp.className = 'sparkle';
+    sp.textContent = emoji;
+    sp.style.setProperty('--tx', tx);
+    sp.style.bottom = '150px';
+    sp.style.left   = '50%';
+    sp.style.transform = 'translateX(-50%)';
+    stage.appendChild(sp);
+    setTimeout(() => sp.classList.add('pop'), 350 + i * 60);
+    setTimeout(() => sp.remove(), 1400);
+  });
+
+  // Pop item out of box
+  const pop = document.getElementById('luckyPop');
+  document.getElementById('luckyPopIcon').textContent = luckyAct.icon;
+  document.getElementById('luckyPopName').textContent = luckyAct.name;
+  setTimeout(() => pop.classList.add('visible'), 400);
+
+  // Show toast
+  setTimeout(() => {
+    document.getElementById('luckyIcon').textContent = luckyAct.icon;
+    document.getElementById('luckyName').textContent = luckyAct.name;
+    document.getElementById('luckyHint').textContent = luckyAct.hint;
+    document.getElementById('luckyResult').classList.add('visible');
+  }, 900);
+}
+
+// ─── DICE ROLL ────────────────────────────────────────────────────
+// 6 face transforms so each face ends up facing the camera
+const DICE_FACES_TRANSFORM = [
+  'rotateX(0deg)   rotateY(0deg)',    // front
+  'rotateX(0deg)   rotateY(180deg)',  // back
+  'rotateX(0deg)   rotateY(-90deg)',  // right
+  'rotateX(0deg)   rotateY(90deg)',   // left
+  'rotateX(-90deg) rotateY(0deg)',    // top
+  'rotateX(90deg)  rotateY(0deg)',    // bottom
+];
+
+let diceRolling = false;
+let diceAssigned = []; // activity index per face
+
+function assignDiceFaces() {
+  // Pick 6 random activities (may repeat if list < 6, but we have 12 so fine)
+  const picks = shuffle(activities).slice(0, 6);
+  diceAssigned = picks;
+  ['df0','df1','df2','df3','df4','df5'].forEach((id, i) => {
+    document.getElementById(id).textContent = picks[i].icon;
+  });
+}
+
+function resetDice() {
+  diceRolling = false;
+  assignDiceFaces();
+  const dice = document.getElementById('dice3d');
+  dice.classList.remove('rolling');
+  dice.style.setProperty('--dice-end-transform', 'rotateX(20deg) rotateY(30deg)');
+  dice.style.transform = 'rotateX(20deg) rotateY(30deg)';
+  document.getElementById('diceActName').classList.remove('visible');
+  document.getElementById('diceActHint').classList.remove('visible');
+  document.getElementById('diceActName').textContent = '';
+  document.getElementById('diceActHint').textContent = '';
+}
+
+function rollDice() {
+  if (diceRolling) return;
+  diceRolling = true;
+
+  // Pick which face wins (0–5)
+  const winFace = Math.floor(Math.random() * 6);
+  const act = diceAssigned[winFace];
+
+  // End transform: add extra full spins + the face-show transform
+  const [rx, ry] = DICE_FACES_TRANSFORM[winFace].match(/-?\d+/g).map(Number);
+  const endTransform = `rotateX(${rx + 720}deg) rotateY(${ry + 720}deg)`;
+
+  const dice = document.getElementById('dice3d');
+  dice.style.setProperty('--dice-end-transform', endTransform);
+
+  // Hide result
+  document.getElementById('diceActName').classList.remove('visible');
+  document.getElementById('diceActHint').classList.remove('visible');
+
+  // Trigger animation
+  dice.classList.remove('rolling');
+  void dice.offsetWidth; // force reflow
+  dice.classList.add('rolling');
+
+  setTimeout(() => {
+    diceRolling = false;
+    document.getElementById('diceActName').textContent = act.icon + '  ' + act.name;
+    document.getElementById('diceActHint').textContent = act.hint;
+    document.getElementById('diceActName').classList.add('visible');
+    document.getElementById('diceActHint').classList.add('visible');
+  }, 1600);
 }
 
 // Wire up scratch events after DOM ready
