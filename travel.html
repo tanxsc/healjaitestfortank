@@ -289,34 +289,44 @@
     .result-toast .toast-icon  { font-size: 2.5rem; margin: .25rem 0; }
     .result-toast .toast-name  { font-family: 'Mitr', sans-serif; font-size: 1.3rem; color: var(--brown); }
 
-    /* ─── SPIN WHEEL SECTION ───────────────────────────────────── */
-    #wheel-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+    /* ─── FERRIS WHEEL SECTION ─────────────────────────────────── */
+    #wheel-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.2rem; }
 
-    .wheel-wrapper {
+    .ferris-scene {
       position: relative;
-      width: min(360px, 90vw);
-      height: min(360px, 90vw);
-    }
-
-    /* Pointer triangle */
-    .wheel-pointer {
-      position: absolute;
-      top: -18px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0; height: 0;
-      border-left: 14px solid transparent;
-      border-right: 14px solid transparent;
-      border-top: 28px solid var(--rose);
-      z-index: 10;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,.2));
+      width: min(400px, 95vw);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     canvas#wheel {
-      width: 100%; height: 100%;
-      border-radius: 50%;
-      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      width: min(400px, 95vw);
+      height: min(400px, 95vw);
     }
+
+    /* Platform legs below canvas */
+    .ferris-platform {
+      width: 80%;
+      height: 14px;
+      background: linear-gradient(to bottom, var(--brown-lt), var(--brown));
+      border-radius: 4px;
+      margin-top: -2px;
+      box-shadow: 0 4px 10px rgba(0,0,0,.2);
+      position: relative;
+    }
+    .ferris-platform::before,
+    .ferris-platform::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      width: 12px;
+      height: 38px;
+      background: var(--brown);
+      border-radius: 3px;
+    }
+    .ferris-platform::before { left: 18%; }
+    .ferris-platform::after  { right: 18%; }
 
     /* ─── Back link ────────────────────────────────────────────── */
     .back-link {
@@ -903,9 +913,11 @@
   <!-- SPIN WHEEL MODE                                           -->
   <!-- ══════════════════════════════════════════════════════════ -->
   <section id="wheel-section" class="hidden">
-    <div class="wheel-wrapper">
-      <div class="wheel-pointer"></div>
-      <canvas id="wheel" width="600" height="600"></canvas>
+    <p class="instruction">กดปุ่มเพื่อหมุนชิงช้าสวรรค์และดูกิจกรรมที่ได้!</p>
+
+    <div class="ferris-scene">
+      <canvas id="wheel" width="800" height="800"></canvas>
+      <div class="ferris-platform"></div>
     </div>
 
     <div class="result-toast" id="wheelResult">
@@ -915,7 +927,7 @@
     </div>
 
     <div class="btn-row">
-      <button class="btn-pick" onclick="spinWheel()">🎰 หมุน!</button>
+      <button class="btn-pick" onclick="spinWheel()">🎡 หมุน!</button>
     </div>
   </section>
 
@@ -1107,7 +1119,7 @@ function setMode(mode) {
     document.getElementById(m + '-section').classList.toggle('hidden', m !== mode);
     document.getElementById('btn-mode-' + m).classList.toggle('active', m === mode);
   });
-  if (mode === 'wheel' && !wheelDrawn) drawWheel();
+  if (mode === 'wheel') initFerrisWheel();
   if (mode === 'slot')    buildSlot();
   if (mode === 'scratch') resetScratch();
   if (mode === 'lucky')   resetBox();
@@ -1205,67 +1217,229 @@ function resetCards() {
 buildCards();
 
 // ─── SPIN WHEEL ───────────────────────────────────────────────────
-let wheelDrawn = false;
-let isSpinning = false;
-let currentAngle = 0;
+// ─── FERRIS WHEEL ────────────────────────────────────────────────
+let isSpinning  = false;
+let ferrisAngle = 0;   // current rotation in radians (0 = first gondola at top)
+let ferrisAnimId = null;
 
-const COLORS = [
-  '#f2a8a8','#a8d4a8','#a8c4e8','#d4b8e8','#f2cca8',
-  '#a8e8d4','#e8d4a8','#f2a8cc','#c8e8a8','#a8cce8','#e8a8b8','#b8e8d4'
+const GONDOLA_COLORS = [
+  '#f2a8a8','#a8d4a8','#a8c4e8','#d4b8e8','#f2cca8','#a8e8d4',
+  '#e8d4a8','#f2a8cc','#c8e8a8','#a8cce8','#e8a8b8','#b8e8d4'
 ];
 
-function drawWheel(angle = 0) {
+function drawFerrisWheel(angle) {
   const canvas = document.getElementById('wheel');
-  const ctx = canvas.getContext('2d');
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-  const r  = cx - 10;
-  const n  = activities.length;
-  const slice = (2 * Math.PI) / n;
+  const ctx    = canvas.getContext('2d');
+  const S      = canvas.width;           // 800
+  const cx     = S / 2, cy = S / 2;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const RIM_R    = 300;   // outer rim
+  const HUB_R    = 28;
+  const SPOKE_R  = RIM_R - 18;
+  const GOND_R   = RIM_R + 8;  // gondola hang point (just outside rim)
+  const GW = 108, GH = 80;     // gondola box size
+  const CHAIN    = 22;          // chain length below attachment
+  const N        = activities.length;
 
-  activities.forEach((act, i) => {
-    const start = angle + i * slice - Math.PI / 2;
-    const end   = start + slice;
+  ctx.clearRect(0, 0, S, S);
 
-    // Slice
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r, start, end);
-    ctx.closePath();
-    ctx.fillStyle = COLORS[i % COLORS.length];
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,.6)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Text
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(start + slice / 2);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#5a3e2b';
-    ctx.font = 'bold 22px Sarabun, sans-serif';
-    ctx.fillText(act.icon, r - 14, 7);
-    ctx.font = '18px Sarabun, sans-serif';
-    ctx.fillStyle = '#3a2010';
-    // Clip text width
-    const label = act.name.length > 10 ? act.name.slice(0, 10) + '…' : act.name;
-    ctx.fillText(label, r - 44, 7);
-    ctx.restore();
-  });
-
-  // Centre circle
+  // ── Sky gradient background ──────────────────────────────────
+  const sky = ctx.createRadialGradient(cx, cy, RIM_R * .3, cx, cy, RIM_R * 1.4);
+  sky.addColorStop(0,   'rgba(253,246,238,0)');
+  sky.addColorStop(1,   'rgba(232,208,196,.18)');
+  ctx.fillStyle = sky;
   ctx.beginPath();
-  ctx.arc(cx, cy, 28, 0, 2 * Math.PI);
-  ctx.fillStyle = 'white';
+  ctx.arc(cx, cy, RIM_R * 1.5, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,.1)';
-  ctx.lineWidth = 3;
+
+  // ── Main cross-braces (4 thick structural spokes) ───────────
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+  for (let b = 0; b < 4; b++) {
+    ctx.save();
+    ctx.rotate(b * Math.PI / 2);
+    ctx.beginPath();
+    ctx.moveTo(0, -HUB_R);
+    ctx.lineTo(0, -SPOKE_R);
+    ctx.strokeStyle = '#b89878';
+    ctx.lineWidth   = 9;
+    ctx.lineCap     = 'round';
+    ctx.stroke();
+    // Diagonal cross-braces between spokes for structure
+    ctx.restore();
+  }
+  // Thin spokes to each gondola
+  for (let i = 0; i < N; i++) {
+    const θ = (i / N) * Math.PI * 2;
+    ctx.save();
+    ctx.rotate(θ);
+    ctx.beginPath();
+    ctx.moveTo(0, -HUB_R - 4);
+    ctx.lineTo(0, -SPOKE_R + 4);
+    ctx.strokeStyle = '#d4bc9c';
+    ctx.lineWidth   = 3;
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // ── Outer rim ────────────────────────────────────────────────
+  // Shadow
+  ctx.beginPath();
+  ctx.arc(cx + 3, cy + 5, RIM_R, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(0,0,0,.08)';
+  ctx.lineWidth   = 14;
+  ctx.stroke();
+  // Main rim
+  ctx.beginPath();
+  ctx.arc(cx, cy, RIM_R, 0, Math.PI * 2);
+  ctx.strokeStyle = '#e8a0a0';
+  ctx.lineWidth   = 10;
+  ctx.stroke();
+  // Inner rim highlight
+  ctx.beginPath();
+  ctx.arc(cx, cy, RIM_R - 6, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,.4)';
+  ctx.lineWidth   = 4;
   ctx.stroke();
 
-  wheelDrawn = true;
+  // ── Rim lights (small dots at each gondola position) ─────────
+  for (let i = 0; i < N; i++) {
+    const θ = angle + (i / N) * Math.PI * 2 - Math.PI / 2;
+    const lx = cx + RIM_R * Math.cos(θ);
+    const ly = cy + RIM_R * Math.sin(θ);
+    ctx.beginPath();
+    ctx.arc(lx, ly, 7, 0, Math.PI * 2);
+    ctx.fillStyle = GONDOLA_COLORS[i % GONDOLA_COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // ── Gondolas ─────────────────────────────────────────────────
+  for (let i = 0; i < N; i++) {
+    const θ  = angle + (i / N) * Math.PI * 2 - Math.PI / 2;
+    // Attachment point on rim
+    const ax = cx + GOND_R * Math.cos(θ);
+    const ay = cy + GOND_R * Math.sin(θ);
+    // Gondola top-center (hangs straight down from attachment)
+    const gx = ax;
+    const gy = ay + CHAIN;
+
+    // Chain lines
+    ctx.beginPath();
+    ctx.moveTo(ax - 5, ay);
+    ctx.lineTo(ax - 5, gy);
+    ctx.moveTo(ax + 5, ay);
+    ctx.lineTo(ax + 5, gy);
+    ctx.strokeStyle = '#b89878';
+    ctx.lineWidth   = 2.5;
+    ctx.stroke();
+
+    // Gondola box shadow
+    roundRect(ctx, gx - GW / 2 + 3, gy + 3, GW, GH, 12);
+    ctx.fillStyle = 'rgba(0,0,0,.1)';
+    ctx.fill();
+
+    // Gondola box fill
+    const grad = ctx.createLinearGradient(gx - GW / 2, gy, gx + GW / 2, gy + GH);
+    grad.addColorStop(0, lighten(GONDOLA_COLORS[i % GONDOLA_COLORS.length], .18));
+    grad.addColorStop(1, GONDOLA_COLORS[i % GONDOLA_COLORS.length]);
+    roundRect(ctx, gx - GW / 2, gy, GW, GH, 12);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Gondola border
+    roundRect(ctx, gx - GW / 2, gy, GW, GH, 12);
+    ctx.strokeStyle = 'rgba(255,255,255,.55)';
+    ctx.lineWidth   = 2.5;
+    ctx.stroke();
+
+    // Window frame on gondola
+    roundRect(ctx, gx - GW / 2 + 8, gy + 8, GW - 16, GH - 16, 7);
+    ctx.strokeStyle = 'rgba(255,255,255,.35)';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    // Activity icon
+    ctx.font      = '28px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(activities[i].icon, gx, gy + GH * .38);
+
+    // Activity name (short)
+    ctx.font      = `bold ${S > 500 ? 14 : 11}px Sarabun, sans-serif`;
+    ctx.fillStyle = 'rgba(60,30,10,.8)';
+    const label   = activities[i].name.length > 8 ? activities[i].name.slice(0, 8) + '…' : activities[i].name;
+    ctx.fillText(label, gx, gy + GH * .72);
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  // ── Hub ──────────────────────────────────────────────────────
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, HUB_R + 10, 0, Math.PI * 2);
+  ctx.fillStyle = '#e8a0a0';
+  ctx.fill();
+  // Hub body
+  const hubGrad = ctx.createRadialGradient(cx - 6, cy - 6, 2, cx, cy, HUB_R);
+  hubGrad.addColorStop(0, '#ffffff');
+  hubGrad.addColorStop(1, '#f0d8d0');
+  ctx.beginPath();
+  ctx.arc(cx, cy, HUB_R, 0, Math.PI * 2);
+  ctx.fillStyle = hubGrad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.7)';
+  ctx.lineWidth   = 3;
+  ctx.stroke();
+  // Hub bolt
+  ctx.beginPath();
+  ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+  ctx.fillStyle = '#c49878';
+  ctx.fill();
+
+  // ── Pointer arrow at bottom (entry point) ────────────────────
+  const PAY = cy + RIM_R + 52;  // just below bottom of rim
+  ctx.beginPath();
+  ctx.moveTo(cx, PAY - 18);
+  ctx.lineTo(cx - 14, PAY + 4);
+  ctx.lineTo(cx + 14, PAY + 4);
+  ctx.closePath();
+  ctx.fillStyle = '#e8a0a0';
+  ctx.fill();
+  ctx.strokeStyle = 'white';
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+  // "Board here" label
+  ctx.font      = `bold 18px Sarabun, sans-serif`;
+  ctx.fillStyle = '#8b6c5c';
+  ctx.textAlign = 'center';
+  ctx.fillText('▼ ขึ้นที่นี่', cx, PAY + 28);
+}
+
+// Helpers
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function lighten(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, (n >> 16) + Math.round(amt * 255));
+  const g = Math.min(255, ((n >> 8) & 0xff) + Math.round(amt * 255));
+  const b = Math.min(255, (n & 0xff) + Math.round(amt * 255));
+  return `rgb(${r},${g},${b})`;
 }
 
 function spinWheel() {
@@ -1273,41 +1447,63 @@ function spinWheel() {
   isSpinning = true;
   document.getElementById('wheelResult').classList.remove('visible');
 
-  const extraSpins  = (5 + Math.floor(Math.random() * 5)) * 2 * Math.PI;
-  const randomStop  = Math.random() * 2 * Math.PI;
-  const targetAngle = currentAngle + extraSpins + randomStop;
-  const duration    = 4000 + Math.random() * 1500;
-  const startAngle  = currentAngle;
-  const startTime   = performance.now();
+  const extraSpins = (6 + Math.floor(Math.random() * 4)) * Math.PI * 2;
+  const randomStop = Math.random() * Math.PI * 2;
+  const target     = ferrisAngle + extraSpins + randomStop;
+  const duration   = 4500 + Math.random() * 1500;
+  const startAngle = ferrisAngle;
+  const startTime  = performance.now();
 
   function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
   function animate(now) {
-    const elapsed = now - startTime;
-    const t = Math.min(elapsed / duration, 1);
-    currentAngle = startAngle + (targetAngle - startAngle) * easeOut(t);
-    drawWheel(currentAngle);
-
+    const t = Math.min((now - startTime) / duration, 1);
+    ferrisAngle = startAngle + (target - startAngle) * easeOut(t);
+    drawFerrisWheel(ferrisAngle);
     if (t < 1) {
-      requestAnimationFrame(animate);
+      ferrisAnimId = requestAnimationFrame(animate);
     } else {
-      currentAngle = currentAngle % (2 * Math.PI);
-      isSpinning = false;
+      ferrisAngle = ferrisAngle % (Math.PI * 2);
+      isSpinning  = false;
       showWheelResult();
     }
   }
-  requestAnimationFrame(animate);
+  ferrisAnimId = requestAnimationFrame(animate);
 }
 
 function showWheelResult() {
-  const n = activities.length;
-  const slice = (2 * Math.PI) / n;
-  const normalised = (((-currentAngle) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-  const index = Math.floor(normalised / slice) % n;
-  const act = activities[index];
+  const N = activities.length;
+  // Bottom of wheel = angle π/2 from center. Which gondola is there?
+  // Gondola i is at angle: ferrisAngle + (i/N)*2π - π/2
+  // It reaches the bottom (π/2) when that equals π/2 (mod 2π)
+  // → ferrisAngle + (i/N)*2π ≡ π (mod 2π)
+  const slice = (Math.PI * 2) / N;
+  const bottomAngle = Math.PI / 2;  // bottom of circle
+  // Normalise ferrisAngle
+  const norm = ((ferrisAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  // For each gondola i, its angle from top = norm + (i/N)*2π - π/2
+  let bestIdx = 0, bestDist = Infinity;
+  for (let i = 0; i < N; i++) {
+    const gondolaAngle = ((norm + i * slice - Math.PI / 2) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    // Distance from bottom (π/2 in standard coords = 3π/2 from top-of-circle)
+    // We want gondola at bottom = angle π/2 in screen coords
+    // In screen coords, angle 0 = right, π/2 = bottom
+    // Our gondola position from center: θ = norm + (i/N)*2π - π/2
+    // at bottom means θ ≡ π/2 (mod 2π)
+    let dist = Math.abs(gondolaAngle - Math.PI / 2);
+    if (dist > Math.PI) dist = Math.PI * 2 - dist;
+    if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+  }
+  const act = activities[bestIdx];
   document.getElementById('wheelIcon').textContent = act.icon;
   document.getElementById('wheelName').textContent = act.name;
   document.getElementById('wheelResult').classList.add('visible');
+}
+
+// Draw initial state when mode is opened
+function initFerrisWheel() {
+  ferrisAngle = 0;
+  drawFerrisWheel(0);
 }
 
 // ─── SLOT MACHINE ────────────────────────────────────────────────
