@@ -331,6 +331,142 @@
     }
     .back-link:hover { color: var(--brown); }
 
+    /* ─── SLOT MACHINE ────────────────────────────────────────── */
+    #slot-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+
+    .slot-machine {
+      background: linear-gradient(160deg, #f5e6d8, #ede0d4);
+      border-radius: 24px;
+      padding: 2rem 2rem 1.5rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,.15), inset 0 2px 4px rgba(255,255,255,.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+      width: min(480px, 95vw);
+    }
+
+    .slot-reels {
+      display: flex;
+      gap: .75rem;
+    }
+
+    .slot-reel-wrap {
+      width: 110px;
+      height: 130px;
+      overflow: hidden;
+      border-radius: 14px;
+      background: white;
+      box-shadow: inset 0 3px 10px rgba(0,0,0,.15), 0 2px 6px rgba(0,0,0,.1);
+      position: relative;
+    }
+    /* top/bottom fade mask */
+    .slot-reel-wrap::before, .slot-reel-wrap::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 36px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .slot-reel-wrap::before { top: 0;    background: linear-gradient(to bottom, rgba(255,255,255,.95), transparent); }
+    .slot-reel-wrap::after  { bottom: 0; background: linear-gradient(to top,    rgba(255,255,255,.95), transparent); }
+
+    .slot-reel {
+      display: flex;
+      flex-direction: column;
+      transition: transform .08s linear;
+    }
+
+    .slot-item {
+      width: 110px;
+      height: 130px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .slot-item .s-icon { font-size: 2rem; line-height: 1; }
+    .slot-item .s-name { font-size: .65rem; color: var(--brown); text-align: center; line-height: 1.3; padding: 0 6px; }
+
+    /* Centre highlight line */
+    .slot-highlight {
+      position: absolute;
+      top: 50%; left: 0; right: 0;
+      height: 130px;
+      transform: translateY(-50%);
+      border-top: 2px solid var(--rose);
+      border-bottom: 2px solid var(--rose);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .slot-lever-row { display: flex; align-items: center; gap: 1rem; }
+
+    .slot-lever {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--rose), #c86060);
+      border: none;
+      cursor: pointer;
+      font-size: 1.4rem;
+      box-shadow: 0 4px 14px rgba(200,80,80,.4);
+      transition: transform .1s, box-shadow .1s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .slot-lever:hover  { transform: scale(1.08); }
+    .slot-lever:active { transform: scale(.95); box-shadow: 0 2px 6px rgba(200,80,80,.3); }
+    .slot-lever:disabled { opacity: .5; cursor: default; transform: none; }
+
+    /* ─── SCRATCH CARD ─────────────────────────────────────────── */
+    #scratch-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+
+    .scratch-wrapper {
+      position: relative;
+      width: min(340px, 90vw);
+      height: 220px;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    /* The revealed layer underneath */
+    .scratch-reveal {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .scratch-reveal .sr-icon { font-size: 3rem; }
+    .scratch-reveal .sr-name {
+      font-family: 'Mitr', sans-serif;
+      font-size: 1.4rem;
+      color: white;
+      line-height: 1.3;
+    }
+    .scratch-reveal .sr-hint { font-size: .85rem; color: rgba(255,255,255,.85); }
+
+    /* Canvas sits on top */
+    .scratch-canvas {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+    }
+
+    .scratch-pct {
+      font-size: .8rem;
+      color: var(--brown-lt);
+    }
+
     /* ─── Hidden utility ───────────────────────────────────────── */
     .hidden { display: none !important; }
 
@@ -358,8 +494,10 @@
 
   <!-- Mode toggle -->
   <div class="mode-toggle">
-    <button id="btn-mode-card"  class="active" onclick="setMode('card')">🃏 พลิกไพ่</button>
-    <button id="btn-mode-wheel" onclick="setMode('wheel')">🎡 หมุนวงล้อ</button>
+    <button id="btn-mode-card"    class="active" onclick="setMode('card')">🃏 พลิกไพ่</button>
+    <button id="btn-mode-wheel"   onclick="setMode('wheel')">🎡 วงล้อ</button>
+    <button id="btn-mode-slot"    onclick="setMode('slot')">🎰 สล็อต</button>
+    <button id="btn-mode-scratch" onclick="setMode('scratch')">🪙 ขูดรางวัล</button>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════ -->
@@ -402,6 +540,65 @@
     </div>
   </section>
 
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- SLOT MACHINE MODE                                         -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <section id="slot-section" class="hidden">
+    <p class="instruction">กดปุ่มเพื่อหมุนสล็อตและดูกิจกรรมที่ได้!</p>
+
+    <div class="slot-machine">
+      <div class="slot-reels" id="slotReels">
+        <div class="slot-reel-wrap">
+          <div class="slot-highlight"></div>
+          <div class="slot-reel" id="reel0"></div>
+        </div>
+        <div class="slot-reel-wrap">
+          <div class="slot-highlight"></div>
+          <div class="slot-reel" id="reel1"></div>
+        </div>
+        <div class="slot-reel-wrap">
+          <div class="slot-highlight"></div>
+          <div class="slot-reel" id="reel2"></div>
+        </div>
+      </div>
+
+      <div class="slot-lever-row">
+        <button class="btn-reset" onclick="resetSlot()">↺ เริ่มใหม่</button>
+        <button class="slot-lever" id="slotBtn" onclick="spinSlot()">🎰</button>
+        <div style="width:80px"></div>
+      </div>
+    </div>
+
+    <div class="result-toast" id="slotResult">
+      <div class="toast-label">กิจกรรมของคุณคือ</div>
+      <div class="toast-icon" id="slotIcon"></div>
+      <div class="toast-name" id="slotName"></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- SCRATCH CARD MODE                                         -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <section id="scratch-section" class="hidden">
+    <p class="instruction">ขูดบัตรเพื่อเปิดเผยกิจกรรมของคุณ! 🪙</p>
+
+    <div class="scratch-wrapper" id="scratchWrapper">
+      <div class="scratch-reveal color-0" id="scratchReveal">
+        <div class="sr-icon" id="scratchIcon">🌸</div>
+        <div class="sr-name" id="scratchName">?</div>
+        <div class="sr-hint" id="scratchHint"></div>
+      </div>
+      <canvas class="scratch-canvas" id="scratchCanvas"></canvas>
+    </div>
+
+    <div class="scratch-pct" id="scratchPct">ขูดเพื่อเปิดเผย...</div>
+
+    <div class="btn-row">
+      <button class="btn-pick" onclick="revealAll()">✨ เปิดเผยทั้งหมด!</button>
+      <button class="btn-reset" onclick="resetScratch()">↺ บัตรใหม่</button>
+    </div>
+  </section>
+
   <a class="back-link" href="index.html">← กลับแผนที่</a>
 </div>
 
@@ -440,13 +637,15 @@ for (let i = 0; i < 18; i++) {
 }
 
 // ─── Mode switching ───────────────────────────────────────────────
+const MODES = ['card', 'wheel', 'slot', 'scratch'];
 function setMode(mode) {
-  const isCard = mode === 'card';
-  document.getElementById('card-section').classList.toggle('hidden', !isCard);
-  document.getElementById('wheel-section').classList.toggle('hidden', isCard);
-  document.getElementById('btn-mode-card').classList.toggle('active', isCard);
-  document.getElementById('btn-mode-wheel').classList.toggle('active', !isCard);
-  if (!isCard && !wheelDrawn) drawWheel();
+  MODES.forEach(m => {
+    document.getElementById(m + '-section').classList.toggle('hidden', m !== mode);
+    document.getElementById('btn-mode-' + m).classList.toggle('active', m === mode);
+  });
+  if (mode === 'wheel' && !wheelDrawn) drawWheel();
+  if (mode === 'slot')    buildSlot();
+  if (mode === 'scratch') resetScratch();
 }
 
 // ─── CARD FLIP ────────────────────────────────────────────────────
@@ -636,15 +835,210 @@ function spinWheel() {
 function showWheelResult() {
   const n = activities.length;
   const slice = (2 * Math.PI) / n;
-  // Pointer is at top (−π/2). Normalize currentAngle to find which slice is under pointer.
   const normalised = (((-currentAngle) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
   const index = Math.floor(normalised / slice) % n;
   const act = activities[index];
-
   document.getElementById('wheelIcon').textContent = act.icon;
   document.getElementById('wheelName').textContent = act.name;
   document.getElementById('wheelResult').classList.add('visible');
 }
+
+// ─── SLOT MACHINE ────────────────────────────────────────────────
+let slotSpinning = false;
+let slotPicked = null;
+
+function buildSlot() {
+  slotSpinning = false;
+  slotPicked = null;
+  document.getElementById('slotResult').classList.remove('visible');
+  document.getElementById('slotBtn').disabled = false;
+  [0, 1, 2].forEach(ri => {
+    const reel = document.getElementById('reel' + ri);
+    reel.style.transition = 'none';
+    reel.style.transform = 'translateY(0)';
+    reel.innerHTML = '';
+    // Fill reel with shuffled copies so it looks full
+    const pool = shuffle([...shuffle(activities), ...shuffle(activities), ...shuffle(activities)]);
+    pool.forEach(act => {
+      const item = document.createElement('div');
+      item.className = 'slot-item';
+      item.innerHTML = `<div class="s-icon">${act.icon}</div><div class="s-name">${act.name}</div>`;
+      reel.appendChild(item);
+    });
+  });
+}
+
+function spinSlot() {
+  if (slotSpinning) return;
+  slotSpinning = true;
+  document.getElementById('slotBtn').disabled = true;
+  document.getElementById('slotResult').classList.remove('visible');
+
+  // Pick ONE activity — all 3 reels show parts of different activities but center lands on picked
+  slotPicked = activities[Math.floor(Math.random() * activities.length)];
+
+  const ITEM_H = 130;
+  const reelCount = 3;
+  const delays = [0, 300, 600]; // stagger stop times
+
+  // For each reel: spin fast, then slow to stop with picked item in center
+  [0, 1, 2].forEach((ri, idx) => {
+    const reel = document.getElementById('reel' + ri);
+    const items = reel.querySelectorAll('.slot-item');
+    const total = items.length;
+
+    // Find or place the picked activity at a known position
+    // We'll target the item at index 4 (leaving room above/below) and update its content
+    const targetIdx = 4 + idx; // slight offset per reel for visual variety
+    items[targetIdx].querySelector('.s-icon').textContent = slotPicked.icon;
+    items[targetIdx].querySelector('.s-name').textContent = slotPicked.name;
+
+    // Final translateY: puts targetIdx item in center (offset by 1 item up since center = slot height/2 - ITEM_H/2)
+    const finalY = -(targetIdx * ITEM_H);
+
+    // Start from top, animate down quickly then ease to final
+    reel.style.transition = 'none';
+    reel.style.transform = 'translateY(0)';
+
+    setTimeout(() => {
+      // Fast spin phase
+      reel.style.transition = `transform ${1.2 + idx * 0.3}s cubic-bezier(0.1, 0, 0.3, 1)`;
+      reel.style.transform = `translateY(${finalY - ITEM_H * (8 - idx * 2)}px)`;
+
+      setTimeout(() => {
+        // Slow settle
+        reel.style.transition = `transform ${0.6 + idx * 0.15}s cubic-bezier(0.25, 1.3, 0.5, 1)`;
+        reel.style.transform = `translateY(${finalY}px)`;
+
+        if (idx === reelCount - 1) {
+          setTimeout(() => {
+            slotSpinning = false;
+            document.getElementById('slotIcon').textContent = slotPicked.icon;
+            document.getElementById('slotName').textContent = slotPicked.name;
+            document.getElementById('slotResult').classList.add('visible');
+            document.getElementById('slotBtn').disabled = false;
+          }, 700);
+        }
+      }, (1.2 + idx * 0.3) * 1000 + delays[idx]);
+    }, 30);
+  });
+}
+
+function resetSlot() {
+  buildSlot();
+}
+
+buildSlot();
+
+// ─── SCRATCH CARD ────────────────────────────────────────────────
+let scratchAct = null;
+let isDrawing = false;
+let scratchedPx = 0;
+let totalPx = 0;
+let revealed = false;
+
+function resetScratch() {
+  revealed = false;
+  scratchedPx = 0;
+  document.getElementById('scratchPct').textContent = 'ขูดเพื่อเปิดเผย...';
+
+  // Pick random activity
+  scratchAct = activities[Math.floor(Math.random() * activities.length)];
+  const colorIdx = Math.floor(Math.random() * 12);
+
+  const reveal = document.getElementById('scratchReveal');
+  reveal.className = 'scratch-reveal color-' + colorIdx;
+  document.getElementById('scratchIcon').textContent = scratchAct.icon;
+  document.getElementById('scratchName').textContent = scratchAct.name;
+  document.getElementById('scratchHint').textContent = scratchAct.hint;
+
+  // Set up canvas
+  const wrapper = document.getElementById('scratchWrapper');
+  const canvas  = document.getElementById('scratchCanvas');
+  canvas.width  = wrapper.offsetWidth  || 340;
+  canvas.height = wrapper.offsetHeight || 220;
+  totalPx = canvas.width * canvas.height;
+
+  const ctx = canvas.getContext('2d');
+  // Draw scratch surface
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#c4b4a4';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Pattern overlay
+  ctx.fillStyle = 'rgba(255,255,255,.08)';
+  for (let x = 0; x < canvas.width; x += 20) {
+    for (let y = 0; y < canvas.height; y += 20) {
+      ctx.fillRect(x, y, 10, 10);
+    }
+  }
+
+  // Label
+  ctx.fillStyle = 'rgba(90,62,43,.5)';
+  ctx.font = 'bold 18px Sarabun, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🌸  ขูดที่นี่  🌸', canvas.width / 2, canvas.height / 2);
+
+  ctx.globalCompositeOperation = 'destination-out';
+}
+
+function getPos(e, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const src  = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - rect.left) * (canvas.width  / rect.width),
+    y: (src.clientY - rect.top)  * (canvas.height / rect.height),
+  };
+}
+
+function doScratch(e) {
+  if (!isDrawing || revealed) return;
+  e.preventDefault();
+  const canvas = document.getElementById('scratchCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.globalCompositeOperation = 'destination-out';
+  const { x, y } = getPos(e, canvas);
+  ctx.beginPath();
+  ctx.arc(x, y, 28, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Sample transparency to estimate scratched %
+  scratchedPx += Math.PI * 28 * 28; // approximate
+  const pct = Math.min(100, Math.round((scratchedPx / totalPx) * 100));
+  document.getElementById('scratchPct').textContent = `ขูดแล้ว ${pct}%`;
+
+  if (pct >= 60 && !revealed) {
+    revealed = true;
+    setTimeout(() => {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      document.getElementById('scratchPct').textContent = '🎉 เปิดเผยแล้ว!';
+    }, 300);
+  }
+}
+
+function revealAll() {
+  if (revealed) return;
+  revealed = true;
+  const canvas = document.getElementById('scratchCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('scratchPct').textContent = '🎉 เปิดเผยแล้ว!';
+}
+
+// Wire up scratch events after DOM ready
+window.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('scratchCanvas');
+  canvas.addEventListener('mousedown',  e => { isDrawing = true; doScratch(e); });
+  canvas.addEventListener('mousemove',  e => doScratch(e));
+  canvas.addEventListener('mouseup',    () => isDrawing = false);
+  canvas.addEventListener('mouseleave', () => isDrawing = false);
+  canvas.addEventListener('touchstart', e => { isDrawing = true; doScratch(e); }, { passive: false });
+  canvas.addEventListener('touchmove',  e => doScratch(e),                        { passive: false });
+  canvas.addEventListener('touchend',   () => isDrawing = false);
+  resetScratch();
+});
 </script>
 </body>
 </html>
