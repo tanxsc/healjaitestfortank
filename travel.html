@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>สวนหย่อนใจ – HealJai</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Mitr:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:   #fdf6ee;
+      --pink:    #f2c4c4;
+      --rose:    #e8a0a0;
+      --sage:    #b5c9b0;
+      --sage-dk: #7fa878;
+      --brown:   #8b6c5c;
+      --brown-lt:#c4a882;
+      --text:    #5a3e2b;
+      --card-w:  160px;
+      --card-h:  220px;
+    }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    /* ─── Garden illustration background (CSS art) ─────────────── */
+    .garden-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 100%, #d8ead4 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 20% 90%, #e8d5c4 0%, transparent 60%),
+        linear-gradient(170deg, #fef0e8 0%, #fdf6ee 40%, #edf5eb 100%);
+      pointer-events: none;
+    }
+    /* Floating petals */
+    .petal {
+      position: fixed;
+      width: 10px; height: 12px;
+      border-radius: 50% 0 50% 0;
+      opacity: 0;
+      animation: fall linear infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+    @keyframes fall {
+      0%   { transform: translateY(-20px) rotate(0deg);   opacity: .7; }
+      100% { transform: translateY(110vh) rotate(360deg); opacity: 0;  }
+    }
+
+    /* ─── Page wrapper ─────────────────────────────────────────── */
+    .page {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 860px;
+      padding: 2rem 1.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    /* ─── Room label ───────────────────────────────────────────── */
+    .room-label {
+      font-size: .85rem;
+      color: var(--rose);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    /* ─── Title ────────────────────────────────────────────────── */
+    h1 {
+      font-family: 'Mitr', sans-serif;
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      font-weight: 500;
+      color: var(--brown);
+      text-align: center;
+      line-height: 1.2;
+    }
+    .subtitle {
+      font-size: .95rem;
+      color: var(--brown-lt);
+      text-align: center;
+      max-width: 520px;
+      line-height: 1.7;
+    }
+
+    /* ─── Mode toggle ──────────────────────────────────────────── */
+    .mode-toggle {
+      display: flex;
+      gap: .5rem;
+      background: #ede0d4;
+      border-radius: 99px;
+      padding: 4px;
+    }
+    .mode-toggle button {
+      border: none;
+      background: transparent;
+      padding: .4rem 1.1rem;
+      border-radius: 99px;
+      font-family: 'Sarabun', sans-serif;
+      font-size: .85rem;
+      color: var(--brown);
+      cursor: pointer;
+      transition: background .25s, color .25s;
+    }
+    .mode-toggle button.active {
+      background: white;
+      color: var(--brown);
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+    }
+
+    /* ─── CARD FLIP SECTION ────────────────────────────────────── */
+    #card-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 2rem; }
+
+    .instruction {
+      font-size: .9rem;
+      color: var(--brown-lt);
+      text-align: center;
+    }
+
+    /* Card grid */
+    .card-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    /* Single card */
+    .card-wrap {
+      width: var(--card-w);
+      height: var(--card-h);
+      perspective: 900px;
+      cursor: pointer;
+    }
+    .card-inner {
+      width: 100%; height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform .6s cubic-bezier(.4, 0, .2, 1);
+      border-radius: 18px;
+    }
+    .card-wrap.flipped .card-inner { transform: rotateY(180deg); }
+    .card-wrap.shake .card-inner  { animation: shake .3s ease; }
+    @keyframes shake {
+      0%,100% { transform: rotateY(0) translateX(0); }
+      25%      { transform: rotateY(0) translateX(-6px); }
+      75%      { transform: rotateY(0) translateX(6px); }
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    /* Back of card (face-down) */
+    .card-back {
+      background: linear-gradient(135deg, #d4c4b8 0%, #c4b4a4 100%);
+      box-shadow: 0 4px 16px rgba(0,0,0,.12);
+      border: 3px solid rgba(255,255,255,.5);
+    }
+    .card-back .card-pattern {
+      width: 80%;
+      height: 80%;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,.35);
+      background:
+        repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,.08) 6px, rgba(255,255,255,.08) 12px);
+    }
+    .card-back .card-icon {
+      position: absolute;
+      font-size: 2rem;
+      opacity: .5;
+    }
+
+    /* Front of card (activity revealed) */
+    .card-front {
+      transform: rotateY(180deg);
+      box-shadow: 0 6px 24px rgba(0,0,0,.15);
+      border: 3px solid rgba(255,255,255,.7);
+      flex-direction: column;
+      gap: .5rem;
+    }
+    .card-front .activity-icon { font-size: 2.4rem; }
+    .card-front .activity-name {
+      font-family: 'Mitr', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      line-height: 1.4;
+      color: white;
+    }
+    .card-front .activity-hint {
+      font-size: .75rem;
+      color: rgba(255,255,255,.8);
+      line-height: 1.4;
+    }
+
+    /* Colour palette for fronts */
+    .color-0 { background: linear-gradient(135deg, #f2a8a8, #e87c7c); }
+    .color-1 { background: linear-gradient(135deg, #a8d4a8, #6faf6f); }
+    .color-2 { background: linear-gradient(135deg, #a8c4e8, #6f9fd4); }
+    .color-3 { background: linear-gradient(135deg, #d4b8e8, #b08fd4); }
+    .color-4 { background: linear-gradient(135deg, #f2cca8, #d4a06f); }
+    .color-5 { background: linear-gradient(135deg, #a8e8d4, #6fbfb0); }
+    .color-6 { background: linear-gradient(135deg, #e8d4a8, #cfa96f); }
+    .color-7 { background: linear-gradient(135deg, #f2a8cc, #d46f9f); }
+    .color-8 { background: linear-gradient(135deg, #c8e8a8, #96cc6f); }
+    .color-9 { background: linear-gradient(135deg, #a8cce8, #6fa0cc); }
+    .color-10{ background: linear-gradient(135deg, #e8a8b8, #cc7090); }
+    .color-11{ background: linear-gradient(135deg, #b8e8d4, #70c0a0); }
+
+    /* ─── Random Pick button ───────────────────────────────────── */
+    .btn-pick {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: linear-gradient(135deg, var(--rose), #d47878);
+      color: white;
+      border: none;
+      border-radius: 99px;
+      padding: .75rem 2rem;
+      font-family: 'Mitr', sans-serif;
+      font-size: 1.05rem;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(200,100,100,.35);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .btn-pick:hover  { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(200,100,100,.4); }
+    .btn-pick:active { transform: translateY(0);    box-shadow: 0 2px 8px rgba(200,100,100,.3);  }
+
+    .btn-reset {
+      background: none;
+      border: 2px solid var(--brown-lt);
+      color: var(--brown);
+      border-radius: 99px;
+      padding: .5rem 1.4rem;
+      font-family: 'Sarabun', sans-serif;
+      font-size: .9rem;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-reset:hover { background: rgba(196,168,130,.15); }
+
+    .btn-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+
+    /* Result toast */
+    .result-toast {
+      background: white;
+      border-radius: 16px;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,.12);
+      text-align: center;
+      max-width: 360px;
+      width: 100%;
+      opacity: 0;
+      transform: translateY(12px) scale(.97);
+      transition: opacity .3s, transform .3s;
+      pointer-events: none;
+    }
+    .result-toast.visible {
+      opacity: 1;
+      transform: none;
+      pointer-events: auto;
+    }
+    .result-toast .toast-label { font-size: .8rem; color: var(--brown-lt); }
+    .result-toast .toast-icon  { font-size: 2.5rem; margin: .25rem 0; }
+    .result-toast .toast-name  { font-family: 'Mitr', sans-serif; font-size: 1.3rem; color: var(--brown); }
+
+    /* ─── SPIN WHEEL SECTION ───────────────────────────────────── */
+    #wheel-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+
+    .wheel-wrapper {
+      position: relative;
+      width: min(360px, 90vw);
+      height: min(360px, 90vw);
+    }
+
+    /* Pointer triangle */
+    .wheel-pointer {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 28px solid var(--rose);
+      z-index: 10;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.2));
+    }
+
+    canvas#wheel {
+      width: 100%; height: 100%;
+      border-radius: 50%;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    }
+
+    /* ─── Back link ────────────────────────────────────────────── */
+    .back-link {
+      font-size: .9rem;
+      color: var(--brown-lt);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      margin-top: 1rem;
+      transition: color .2s;
+    }
+    .back-link:hover { color: var(--brown); }
+
+    /* ─── Hidden utility ───────────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    /* ─── Responsive ───────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      :root { --card-w: 130px; --card-h: 180px; }
+      .card-front .activity-icon { font-size: 1.8rem; }
+      .card-front .activity-name { font-size: .85rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Garden background -->
+<div class="garden-bg"></div>
+
+<!-- Floating petals (injected by JS) -->
+
+<div class="page">
+
+  <div class="room-label">ห้องที่ 2</div>
+
+  <h1>สวนหย่อนใจ</h1>
+  <p class="subtitle">เลือกกิจกรรมสุ่มที่จะทำวันนี้ — ห้องนี้สำหรับคนชอบผจญภัยและลองสิ่งใหม่</p>
+
+  <!-- Mode toggle -->
+  <div class="mode-toggle">
+    <button id="btn-mode-card"  class="active" onclick="setMode('card')">🃏 พลิกไพ่</button>
+    <button id="btn-mode-wheel" onclick="setMode('wheel')">🎡 หมุนวงล้อ</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- CARD FLIP MODE                                            -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <section id="card-section">
+    <p class="instruction">แตะไพ่เพื่อพลิกดูกิจกรรม หรือกดปุ่มเพื่อสุ่ม!</p>
+
+    <div class="card-grid" id="cardGrid"></div>
+
+    <div class="result-toast" id="resultToast">
+      <div class="toast-label">กิจกรรมของคุณคือ</div>
+      <div class="toast-icon" id="toastIcon"></div>
+      <div class="toast-name" id="toastName"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-pick" onclick="pickRandom()">🎲 สุ่มให้ฉัน!</button>
+      <button class="btn-reset" onclick="resetCards()">↺ เริ่มใหม่</button>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- SPIN WHEEL MODE                                           -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <section id="wheel-section" class="hidden">
+    <div class="wheel-wrapper">
+      <div class="wheel-pointer"></div>
+      <canvas id="wheel" width="600" height="600"></canvas>
+    </div>
+
+    <div class="result-toast" id="wheelResult">
+      <div class="toast-label">กิจกรรมของคุณคือ</div>
+      <div class="toast-icon" id="wheelIcon"></div>
+      <div class="toast-name" id="wheelName"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-pick" onclick="spinWheel()">🎰 หมุน!</button>
+    </div>
+  </section>
+
+  <a class="back-link" href="index.html">← กลับแผนที่</a>
+</div>
+
+<script>
+// ─── Activity data ───────────────────────────────────────────────
+const activities = [
+  { name: 'เดินรอบบ้าน 5 นาที',    icon: '🚶', hint: 'ออกไปรับอากาศบริสุทธิ์' },
+  { name: 'มองท้องฟ้า 1 นาที',     icon: '☁️', hint: 'หยุดพักสายตาจากหน้าจอ' },
+  { name: 'หาต้นไม้มาเพ่งดู',      icon: '🌿', hint: 'สังเกตรายละเอียดเล็กๆ' },
+  { name: 'โป๊ะเค้าไหน่!',          icon: '🗺️', hint: 'ลองไปคาเฟ่ใหม่สักที่' },
+  { name: 'ถ่ายรูป 3 อย่างที่สวย',  icon: '📸', hint: 'ฝึกมองโลกในแง่งาม' },
+  { name: 'ดีตรงรถ อย่างกระฉับ',   icon: '🚗', hint: 'ไดรฟ์สั้นๆ ชื่นใจ' },
+  { name: 'ตอบรับนัดที่ค้างอยู่',  icon: '📅', hint: 'จัดการสิ่งที่เลื่อนไปนาน' },
+  { name: 'เมทเทเลือกปลุกเพลง',    icon: '🎵', hint: 'เปิดเพลงใหม่ที่ไม่เคยฟัง' },
+  { name: 'ลุกขึ้นแล้วยืดตัว',     icon: '🧘', hint: '5 นาทีผ่อนคลาย' },
+  { name: 'โทรหาเพื่อนเก่า',       icon: '📞', hint: 'คุยแค่ 5 นาทีก็พอ' },
+  { name: 'จิบน้ำอุ่นช้าๆ',        icon: '☕', hint: 'อยู่กับตัวเองสักครู่' },
+  { name: 'วาดอะไรก็ได้ 1 อย่าง',  icon: '✏️', hint: 'ไม่ต้องสวยก็ได้' },
+];
+
+// ─── Petals ──────────────────────────────────────────────────────
+const petalColors = ['#f2c4c4','#f9dede','#c8e6c8','#d4c4f4','#fde8c8'];
+for (let i = 0; i < 18; i++) {
+  const p = document.createElement('div');
+  p.className = 'petal';
+  p.style.cssText = `
+    left:${Math.random()*100}%;
+    background:${petalColors[i%petalColors.length]};
+    animation-duration:${6+Math.random()*8}s;
+    animation-delay:${Math.random()*10}s;
+    width:${8+Math.random()*8}px;
+    height:${10+Math.random()*10}px;
+    transform:rotate(${Math.random()*360}deg);
+  `;
+  document.body.appendChild(p);
+}
+
+// ─── Mode switching ───────────────────────────────────────────────
+function setMode(mode) {
+  const isCard = mode === 'card';
+  document.getElementById('card-section').classList.toggle('hidden', !isCard);
+  document.getElementById('wheel-section').classList.toggle('hidden', isCard);
+  document.getElementById('btn-mode-card').classList.toggle('active', isCard);
+  document.getElementById('btn-mode-wheel').classList.toggle('active', !isCard);
+  if (!isCard && !wheelDrawn) drawWheel();
+}
+
+// ─── CARD FLIP ────────────────────────────────────────────────────
+const grid = document.getElementById('cardGrid');
+let flippedIndex = null;
+
+// Shuffle array
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+let shuffled = shuffle(activities);
+
+function buildCards() {
+  grid.innerHTML = '';
+  shuffled = shuffle(activities);
+  flippedIndex = null;
+  document.getElementById('resultToast').classList.remove('visible');
+
+  shuffled.forEach((act, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'card-wrap';
+    wrap.dataset.index = i;
+    wrap.innerHTML = `
+      <div class="card-inner">
+        <div class="card-face card-back">
+          <span class="card-icon">🌸</span>
+          <div class="card-pattern"></div>
+        </div>
+        <div class="card-face card-front color-${i % 12}">
+          <div class="activity-icon">${act.icon}</div>
+          <div class="activity-name">${act.name}</div>
+          <div class="activity-hint">${act.hint}</div>
+        </div>
+      </div>`;
+    wrap.addEventListener('click', () => flipCard(wrap, i));
+    grid.appendChild(wrap);
+  });
+}
+
+function flipCard(wrap, i) {
+  if (wrap.classList.contains('flipped')) return;
+  // Reset previously flipped card if different
+  if (flippedIndex !== null && flippedIndex !== i) {
+    const prev = grid.querySelector(`.card-wrap[data-index="${flippedIndex}"]`);
+    if (prev) {
+      prev.classList.remove('flipped');
+      // tiny delay so they don't flip back simultaneously
+    }
+  }
+  wrap.classList.add('flipped');
+  flippedIndex = i;
+  showToast(shuffled[i]);
+}
+
+function showToast(act) {
+  const toast = document.getElementById('resultToast');
+  document.getElementById('toastIcon').textContent = act.icon;
+  document.getElementById('toastName').textContent = act.name;
+  toast.classList.add('visible');
+  toast.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function pickRandom() {
+  // Reset all
+  grid.querySelectorAll('.card-wrap.flipped').forEach(w => w.classList.remove('flipped'));
+  const cards = grid.querySelectorAll('.card-wrap');
+  const pick = Math.floor(Math.random() * cards.length);
+  setTimeout(() => {
+    const target = cards[pick];
+    // Highlight with a little wiggle first
+    target.classList.add('shake');
+    setTimeout(() => {
+      target.classList.remove('shake');
+      flipCard(target, parseInt(target.dataset.index));
+    }, 350);
+    target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 100);
+}
+
+function resetCards() {
+  buildCards();
+}
+
+buildCards();
+
+// ─── SPIN WHEEL ───────────────────────────────────────────────────
+let wheelDrawn = false;
+let isSpinning = false;
+let currentAngle = 0;
+
+const COLORS = [
+  '#f2a8a8','#a8d4a8','#a8c4e8','#d4b8e8','#f2cca8',
+  '#a8e8d4','#e8d4a8','#f2a8cc','#c8e8a8','#a8cce8','#e8a8b8','#b8e8d4'
+];
+
+function drawWheel(angle = 0) {
+  const canvas = document.getElementById('wheel');
+  const ctx = canvas.getContext('2d');
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const r  = cx - 10;
+  const n  = activities.length;
+  const slice = (2 * Math.PI) / n;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  activities.forEach((act, i) => {
+    const start = angle + i * slice - Math.PI / 2;
+    const end   = start + slice;
+
+    // Slice
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.closePath();
+    ctx.fillStyle = COLORS[i % COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.6)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Text
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + slice / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#5a3e2b';
+    ctx.font = 'bold 22px Sarabun, sans-serif';
+    ctx.fillText(act.icon, r - 14, 7);
+    ctx.font = '18px Sarabun, sans-serif';
+    ctx.fillStyle = '#3a2010';
+    // Clip text width
+    const label = act.name.length > 10 ? act.name.slice(0, 10) + '…' : act.name;
+    ctx.fillText(label, r - 44, 7);
+    ctx.restore();
+  });
+
+  // Centre circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, 28, 0, 2 * Math.PI);
+  ctx.fillStyle = 'white';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.1)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  wheelDrawn = true;
+}
+
+function spinWheel() {
+  if (isSpinning) return;
+  isSpinning = true;
+  document.getElementById('wheelResult').classList.remove('visible');
+
+  const extraSpins  = (5 + Math.floor(Math.random() * 5)) * 2 * Math.PI;
+  const randomStop  = Math.random() * 2 * Math.PI;
+  const targetAngle = currentAngle + extraSpins + randomStop;
+  const duration    = 4000 + Math.random() * 1500;
+  const startAngle  = currentAngle;
+  const startTime   = performance.now();
+
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+  function animate(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    currentAngle = startAngle + (targetAngle - startAngle) * easeOut(t);
+    drawWheel(currentAngle);
+
+    if (t < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      currentAngle = currentAngle % (2 * Math.PI);
+      isSpinning = false;
+      showWheelResult();
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function showWheelResult() {
+  const n = activities.length;
+  const slice = (2 * Math.PI) / n;
+  // Pointer is at top (−π/2). Normalize currentAngle to find which slice is under pointer.
+  const normalised = (((-currentAngle) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const index = Math.floor(normalised / slice) % n;
+  const act = activities[index];
+
+  document.getElementById('wheelIcon').textContent = act.icon;
+  document.getElementById('wheelName').textContent = act.name;
+  document.getElementById('wheelResult').classList.add('visible');
+}
+</script>
+</body>
+</html>
