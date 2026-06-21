@@ -752,6 +752,97 @@
     }
     .dice-act-hint.visible { opacity: 1; }
 
+    /* ─── SLIDE SHUFFLE ─────────────────────────────────────────── */
+    #slide-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.8rem; }
+
+    .slide-frame {
+      position: relative;
+      width: min(320px, 90vw);
+      height: 200px;
+      overflow: hidden;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    }
+
+    /* Top & bottom fade masks so cards blur in/out of view */
+    .slide-frame::before,
+    .slide-frame::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 64px;
+      z-index: 4;
+      pointer-events: none;
+    }
+    .slide-frame::before {
+      top: 0;
+      background: linear-gradient(to bottom, rgba(253,246,238,1) 0%, rgba(253,246,238,0) 100%);
+    }
+    .slide-frame::after {
+      bottom: 0;
+      background: linear-gradient(to top, rgba(253,246,238,1) 0%, rgba(253,246,238,0) 100%);
+    }
+
+    /* Highlight bar behind the centre card */
+    .slide-highlight {
+      position: absolute;
+      top: 50%;
+      left: 0; right: 0;
+      height: 200px;
+      transform: translateY(-50%);
+      border-top: 2px solid var(--rose);
+      border-bottom: 2px solid var(--rose);
+      background: rgba(242,196,196,.08);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    /* The scrolling strip */
+    .slide-reel {
+      display: flex;
+      flex-direction: column;
+      will-change: transform;
+    }
+
+    /* Each slide card */
+    .slide-card {
+      width: 100%;
+      height: 200px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 1.1rem;
+      padding: 0 1.5rem;
+      transition: none;
+    }
+    .slide-card .sc-icon {
+      font-size: 2.8rem;
+      line-height: 1;
+      flex-shrink: 0;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.12));
+    }
+    .slide-card .sc-text { display: flex; flex-direction: column; gap: .2rem; }
+    .slide-card .sc-name {
+      font-family: 'Mitr', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--brown);
+      line-height: 1.3;
+    }
+    .slide-card .sc-hint {
+      font-size: .8rem;
+      color: var(--brown-lt);
+      line-height: 1.4;
+    }
+
+    /* Winner card pulses when landed */
+    .slide-card.winner .sc-name { color: var(--rose); }
+    @keyframes slide-pulse {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.03); }
+    }
+    .slide-card.winner { animation: slide-pulse .5s ease 2; }
+
     /* ─── Hidden utility ───────────────────────────────────────── */
     .hidden { display: none !important; }
 
@@ -784,7 +875,8 @@
     <button id="btn-mode-slot"    onclick="setMode('slot')">🎰 สล็อต</button>
     <button id="btn-mode-scratch" onclick="setMode('scratch')">🪙 ขูดรางวัล</button>
     <button id="btn-mode-lucky"   onclick="setMode('lucky')">🎁 กล่องลุ้น</button>
-    <button id="btn-mode-dice"    onclick="setMode('dice')">🎲 ทอยลูกเต๋า</button>
+    <button id="btn-mode-dice"    onclick="setMode('dice')">🎲 ลูกเต๋า</button>
+    <button id="btn-mode-slide"   onclick="setMode('slide')">🎞️ สไลด์</button>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════ -->
@@ -948,6 +1040,29 @@
     </div>
   </section>
 
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- SLIDE SHUFFLE MODE                                        -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <section id="slide-section" class="hidden">
+    <p class="instruction">กดปุ่มเพื่อสุ่ม — การ์ดจะเลื่อนผ่านแล้วหยุดที่กิจกรรมของคุณ!</p>
+
+    <div class="slide-frame" id="slideFrame">
+      <div class="slide-highlight"></div>
+      <div class="slide-reel" id="slideReel"></div>
+    </div>
+
+    <div class="result-toast" id="slideResult">
+      <div class="toast-label">กิจกรรมของคุณคือ</div>
+      <div class="toast-icon" id="slideResultIcon"></div>
+      <div class="toast-name" id="slideResultName"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-pick" id="slideBtn" onclick="startSlide()">▶ สุ่มเลย!</button>
+      <button class="btn-reset" onclick="resetSlide()">↺ เริ่มใหม่</button>
+    </div>
+  </section>
+
   <a class="back-link" href="index.html">← กลับแผนที่</a>
 </div>
 
@@ -986,7 +1101,7 @@ for (let i = 0; i < 18; i++) {
 }
 
 // ─── Mode switching ───────────────────────────────────────────────
-const MODES = ['card', 'wheel', 'slot', 'scratch', 'lucky', 'dice'];
+const MODES = ['card', 'wheel', 'slot', 'scratch', 'lucky', 'dice', 'slide'];
 function setMode(mode) {
   MODES.forEach(m => {
     document.getElementById(m + '-section').classList.toggle('hidden', m !== mode);
@@ -997,6 +1112,7 @@ function setMode(mode) {
   if (mode === 'scratch') resetScratch();
   if (mode === 'lucky')   resetBox();
   if (mode === 'dice')    resetDice();
+  if (mode === 'slide')   resetSlide();
 }
 
 // ─── CARD FLIP ────────────────────────────────────────────────────
@@ -1592,6 +1708,119 @@ window.addEventListener('DOMContentLoaded', () => {
   resetScratch();
   resetDice();
 });
+
+// ─── SLIDE SHUFFLE ───────────────────────────────────────────────
+const CARD_H = 200; // must match CSS .slide-card height
+let slideAnimId  = null;
+let slideRunning = false;
+let slidePool    = [];   // infinite repeated list of activities
+let slideOffset  = 0;   // current translateY (negative = scrolled down)
+let slideTarget  = 0;
+let slideWinner  = null;
+let slideWinnerIdx = 0; // index in slidePool where winner sits
+
+// Build a long pool: 3 random shuffles so the reel looks full before & after
+function buildSlidePool() {
+  slidePool = [...shuffle(activities), ...shuffle(activities), ...shuffle(activities),
+               ...shuffle(activities), ...shuffle(activities)];
+}
+
+function renderSlideReel() {
+  const reel = document.getElementById('slideReel');
+  reel.innerHTML = '';
+  slidePool.forEach(act => {
+    const card = document.createElement('div');
+    card.className = 'slide-card';
+    card.innerHTML = `
+      <div class="sc-icon">${act.icon}</div>
+      <div class="sc-text">
+        <div class="sc-name">${act.name}</div>
+        <div class="sc-hint">${act.hint}</div>
+      </div>`;
+    reel.appendChild(card);
+  });
+}
+
+function setSlideTranslate(y) {
+  document.getElementById('slideReel').style.transform = `translateY(${y}px)`;
+}
+
+function resetSlide() {
+  slideRunning = false;
+  if (slideAnimId) { cancelAnimationFrame(slideAnimId); slideAnimId = null; }
+  buildSlidePool();
+  renderSlideReel();
+  // Start reel so that index 1 is centred in the 200px frame
+  slideOffset = -(1 * CARD_H);
+  setSlideTranslate(slideOffset);
+  document.getElementById('slideResult').classList.remove('visible');
+  document.getElementById('slideBtn').disabled = false;
+
+  // Un-highlight any previous winner
+  document.querySelectorAll('.slide-card.winner').forEach(c => c.classList.remove('winner'));
+}
+
+function startSlide() {
+  if (slideRunning) return;
+  slideRunning = true;
+  document.getElementById('slideBtn').disabled = true;
+  document.getElementById('slideResult').classList.remove('visible');
+  document.querySelectorAll('.slide-card.winner').forEach(c => c.classList.remove('winner'));
+
+  // Pick a winner from the middle third of the pool (guaranteed visible during decel)
+  const winPoolIdx = Math.floor(slidePool.length * 0.55 + Math.random() * slidePool.length * 0.2);
+  slideWinner    = slidePool[winPoolIdx];
+  slideWinnerIdx = winPoolIdx;
+
+  // Target: centre the winner card in the 200px frame
+  // Frame centre = 100px from top; card centre = winPoolIdx * CARD_H + CARD_H/2
+  // translateY = frameCenter - cardCenter = 100 - (winPoolIdx * CARD_H + 100)
+  slideTarget = 100 - (winPoolIdx * CARD_H + CARD_H / 2);
+
+  // We need to scroll from current position (near top) past lots of cards
+  // Animate with easeOutQuart for a smooth decel feel
+  const startOffset = slideOffset;
+  const distance    = slideTarget - startOffset;
+  const duration    = 2800 + Math.random() * 600; // ms
+  let   startTime   = null;
+
+  function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
+
+  function animate(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed = ts - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    slideOffset = startOffset + distance * easeOutQuart(t);
+    setSlideTranslate(slideOffset);
+
+    if (t < 1) {
+      slideAnimId = requestAnimationFrame(animate);
+    } else {
+      // Snap exactly to centre
+      slideOffset = slideTarget;
+      setSlideTranslate(slideOffset);
+      onSlideStop();
+    }
+  }
+
+  slideAnimId = requestAnimationFrame(animate);
+}
+
+function onSlideStop() {
+  slideRunning = false;
+
+  // Highlight winner card
+  const cards = document.querySelectorAll('.slide-card');
+  if (cards[slideWinnerIdx]) cards[slideWinnerIdx].classList.add('winner');
+
+  // Show toast
+  setTimeout(() => {
+    document.getElementById('slideResultIcon').textContent = slideWinner.icon;
+    document.getElementById('slideResultName').textContent = slideWinner.name;
+    document.getElementById('slideResult').classList.add('visible');
+    document.getElementById('slideBtn').disabled = false;
+  }, 550);
+}
 </script>
 </body>
 </html>
