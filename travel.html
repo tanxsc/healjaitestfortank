@@ -599,77 +599,130 @@
       100% { opacity: 0; transform: var(--tx) scale(0); }
     }
 
-    /* ─── DICE ROLL ────────────────────────────────────────────── */
+    /* ─── DICE ROLL (realistic) ────────────────────────────────── */
     #dice-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
 
+    .dice-arena {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      cursor: pointer;
+      user-select: none;
+    }
+
     .dice-stage {
-      perspective: 600px;
-      width: 140px;
-      height: 140px;
-    }
-
-    .dice-3d {
-      width: 140px;
-      height: 140px;
-      position: relative;
-      transform-style: preserve-3d;
-      transform: rotateX(20deg) rotateY(30deg);
-      transition: transform 1.6s cubic-bezier(.22, 1, .36, 1);
-    }
-    .dice-3d.rolling {
-      animation: dice-tumble 1.4s cubic-bezier(.22, 1, .36, 1) forwards;
-    }
-    @keyframes dice-tumble {
-      0%   { transform: rotateX(20deg)  rotateY(30deg); }
-      30%  { transform: rotateX(340deg) rotateY(200deg) rotateZ(90deg); }
-      60%  { transform: rotateX(580deg) rotateY(420deg) rotateZ(180deg); }
-      100% { transform: var(--dice-end-transform); }
-    }
-
-    .dice-face {
-      position: absolute;
-      width: 140px;
-      height: 140px;
-      background: white;
-      border-radius: 24px;
-      border: 3px solid rgba(200,150,120,.3);
-      box-shadow: inset 0 2px 6px rgba(0,0,0,.08);
+      perspective: 480px;
+      perspective-origin: 50% 40%;
+      width: 160px;
+      height: 160px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 3rem;
-      backface-visibility: hidden;
     }
-    .face-front  { transform: translateZ(70px); }
-    .face-back   { transform: rotateY(180deg) translateZ(70px); }
-    .face-right  { transform: rotateY(90deg)  translateZ(70px); }
-    .face-left   { transform: rotateY(-90deg) translateZ(70px); }
-    .face-top    { transform: rotateX(90deg)  translateZ(70px); }
-    .face-bottom { transform: rotateX(-90deg) translateZ(70px); }
+
+    .dice-3d {
+      width: 120px;
+      height: 120px;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateX(20deg) rotateY(30deg);
+      /* default resting tilt */
+      filter: drop-shadow(0 18px 14px rgba(0,0,0,.28));
+    }
+
+    /* Roll animation injected via JS keyframes for dynamic end angle */
+    .dice-face {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 18px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 14px;
+      gap: 0;
+    }
+    /* Face shading — simulate ambient light from top-left */
+    .face-front  { transform: translateZ(60px);            background: #f8f4f0; }
+    .face-back   { transform: rotateY(180deg) translateZ(60px); background: #ddd8d2; }
+    .face-right  { transform: rotateY(90deg)  translateZ(60px); background: #e8e3de; }
+    .face-left   { transform: rotateY(-90deg) translateZ(60px); background: #ccc7c2; }
+    .face-top    { transform: rotateX(90deg)  translateZ(60px); background: #f4f0ec; }
+    .face-bottom { transform: rotateX(-90deg) translateZ(60px); background: #b8b4b0; }
+
+    /* Pips */
+    .pip {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pip::after {
+      content: '';
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #3a2a20;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.15);
+      display: block;
+    }
+    .pip.empty::after { display: none; }
+
+    /* Floor shadow */
+    .dice-shadow {
+      width: 100px;
+      height: 20px;
+      background: radial-gradient(ellipse, rgba(0,0,0,.25) 0%, transparent 70%);
+      border-radius: 50%;
+      margin-top: -4px;
+      transition: transform .15s, opacity .15s;
+    }
+    .dice-shadow.airborne { transform: scaleX(1.6) scaleY(.6); opacity: .12; }
+
+    /* Tap hint */
+    .dice-tap-hint {
+      font-size: .78rem;
+      color: var(--brown-lt);
+      margin-top: .4rem;
+      opacity: 1;
+      transition: opacity .3s;
+    }
+    .dice-tap-hint.hidden-hint { opacity: 0; }
 
     .dice-result-row {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: .5rem;
-      min-height: 80px;
+      gap: .4rem;
+      min-height: 70px;
     }
+    .dice-act-icon {
+      font-size: 2rem;
+      opacity: 0;
+      transform: scale(.6);
+      transition: opacity .35s .1s, transform .35s .1s cubic-bezier(.34,1.56,.64,1);
+    }
+    .dice-act-icon.visible  { opacity: 1; transform: scale(1); }
     .dice-act-name {
       font-family: 'Mitr', sans-serif;
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       color: var(--brown);
       text-align: center;
       opacity: 0;
-      transform: translateY(8px);
-      transition: opacity .4s .2s, transform .4s .2s;
+      transform: translateY(6px);
+      transition: opacity .35s .2s, transform .35s .2s;
     }
     .dice-act-name.visible { opacity: 1; transform: none; }
     .dice-act-hint {
-      font-size: .85rem;
+      font-size: .82rem;
       color: var(--brown-lt);
       text-align: center;
       opacity: 0;
-      transition: opacity .4s .35s;
+      transition: opacity .35s .32s;
     }
     .dice-act-hint.visible { opacity: 1; }
 
@@ -847,18 +900,18 @@
   <section id="dice-section" class="hidden">
     <p class="instruction">ทอยลูกเต๋าเพื่อรับกิจกรรม — แต่ละหน้าซ่อนกิจกรรมไว้!</p>
 
-    <div class="dice-stage" onclick="rollDice()" style="cursor:pointer">
-      <div class="dice-3d" id="dice3d">
-        <div class="dice-face face-front"  id="df0">🌸</div>
-        <div class="dice-face face-back"   id="df1">🌿</div>
-        <div class="dice-face face-right"  id="df2">☁️</div>
-        <div class="dice-face face-left"   id="df3">📸</div>
-        <div class="dice-face face-top"    id="df4">☕</div>
-        <div class="dice-face face-bottom" id="df5">✏️</div>
+    <div class="dice-arena" onclick="rollDice()">
+      <div class="dice-stage">
+        <div class="dice-3d" id="dice3d">
+          <!-- faces built by JS with pip grids -->
+        </div>
       </div>
+      <div class="dice-shadow" id="diceShadow"></div>
+      <div class="dice-tap-hint" id="diceTapHint">แตะเพื่อทอย</div>
     </div>
 
     <div class="dice-result-row">
+      <div class="dice-act-icon" id="diceActIcon"></div>
       <div class="dice-act-name" id="diceActName"></div>
       <div class="dice-act-hint" id="diceActHint"></div>
     </div>
@@ -1363,76 +1416,146 @@ function openBox() {
   }, 900);
 }
 
-// ─── DICE ROLL ────────────────────────────────────────────────────
-// 6 face transforms so each face ends up facing the camera
-const DICE_FACES_TRANSFORM = [
-  'rotateX(0deg)   rotateY(0deg)',    // front
-  'rotateX(0deg)   rotateY(180deg)',  // back
-  'rotateX(0deg)   rotateY(-90deg)',  // right
-  'rotateX(0deg)   rotateY(90deg)',   // left
-  'rotateX(-90deg) rotateY(0deg)',    // top
-  'rotateX(90deg)  rotateY(0deg)',    // bottom
-];
+// ─── DICE ROLL (realistic) ────────────────────────────────────────
+
+// Pip layouts per face value (9-cell grid: 1=pip, 0=empty)
+const PIP_LAYOUTS = {
+  1: [0,0,0, 0,1,0, 0,0,0],
+  2: [1,0,0, 0,0,0, 0,0,1],
+  3: [1,0,0, 0,1,0, 0,0,1],
+  4: [1,0,1, 0,0,0, 1,0,1],
+  5: [1,0,1, 0,1,0, 1,0,1],
+  6: [1,0,1, 1,0,1, 1,0,1],
+};
+
+// Standard dice: opposite faces sum to 7
+// front=1, back=6, right=2, left=5, top=3, bottom=4
+const FACE_VALUES = { front:1, back:6, right:2, left:5, top:3, bottom:4 };
+const FACE_CLASSES = ['face-front','face-back','face-right','face-left','face-top','face-bottom'];
+const FACE_KEYS    = ['front','back','right','left','top','bottom'];
+
+// To show face N facing camera, we need these rotations:
+const FACE_TO_CAMERA = {
+  1: { rx:   0, ry:   0 },  // front
+  6: { rx:   0, ry: 180 },  // back
+  2: { rx:   0, ry: -90 },  // right
+  5: { rx:   0, ry:  90 },  // left
+  3: { rx: -90, ry:   0 },  // top
+  4: { rx:  90, ry:   0 },  // bottom
+};
 
 let diceRolling = false;
-let diceAssigned = []; // activity index per face
+let diceAssigned = {};  // face key -> activity
+let diceStyleEl = null;
+
+function buildDiceFaces() {
+  const dice = document.getElementById('dice3d');
+  dice.innerHTML = '';
+  FACE_KEYS.forEach((key, i) => {
+    const val = FACE_VALUES[key];
+    const face = document.createElement('div');
+    face.className = `dice-face ${FACE_CLASSES[i]}`;
+    const layout = PIP_LAYOUTS[val];
+    layout.forEach(has => {
+      const cell = document.createElement('div');
+      cell.className = has ? 'pip' : 'pip empty';
+      face.appendChild(cell);
+    });
+    dice.appendChild(face);
+  });
+}
 
 function assignDiceFaces() {
-  // Pick 6 random activities (may repeat if list < 6, but we have 12 so fine)
   const picks = shuffle(activities).slice(0, 6);
-  diceAssigned = picks;
-  ['df0','df1','df2','df3','df4','df5'].forEach((id, i) => {
-    document.getElementById(id).textContent = picks[i].icon;
-  });
+  FACE_KEYS.forEach((key, i) => diceAssigned[key] = picks[i]);
 }
 
 function resetDice() {
   diceRolling = false;
   assignDiceFaces();
+  buildDiceFaces();
+
   const dice = document.getElementById('dice3d');
-  dice.classList.remove('rolling');
-  dice.style.setProperty('--dice-end-transform', 'rotateX(20deg) rotateY(30deg)');
-  dice.style.transform = 'rotateX(20deg) rotateY(30deg)';
-  document.getElementById('diceActName').classList.remove('visible');
-  document.getElementById('diceActHint').classList.remove('visible');
-  document.getElementById('diceActName').textContent = '';
-  document.getElementById('diceActHint').textContent = '';
+  if (diceStyleEl) { diceStyleEl.remove(); diceStyleEl = null; }
+  dice.style.animation = 'none';
+  dice.style.transform = 'rotateX(18deg) rotateY(28deg)';
+
+  document.getElementById('diceShadow').classList.remove('airborne');
+  document.getElementById('diceTapHint').classList.remove('hidden-hint');
+
+  ['diceActIcon','diceActName','diceActHint'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('visible');
+    el.textContent = '';
+  });
 }
 
 function rollDice() {
   if (diceRolling) return;
   diceRolling = true;
 
-  // Pick which face wins (0–5)
-  const winFace = Math.floor(Math.random() * 6);
-  const act = diceAssigned[winFace];
+  document.getElementById('diceTapHint').classList.add('hidden-hint');
+  ['diceActIcon','diceActName','diceActHint'].forEach(id =>
+    document.getElementById(id).classList.remove('visible')
+  );
 
-  // End transform: add extra full spins + the face-show transform
-  const [rx, ry] = DICE_FACES_TRANSFORM[winFace].match(/-?\d+/g).map(Number);
-  const endTransform = `rotateX(${rx + 720}deg) rotateY(${ry + 720}deg)`;
+  // Pick a face value to land on (1–6)
+  const winVal = Math.floor(Math.random() * 6) + 1;
+  const winFaceKey = FACE_KEYS[Object.values(FACE_VALUES).indexOf(winVal)];
+  const act = diceAssigned[winFaceKey];
+  const { rx: endRx, ry: endRy } = FACE_TO_CAMERA[winVal];
 
-  const dice = document.getElementById('dice3d');
-  dice.style.setProperty('--dice-end-transform', endTransform);
+  // Extra full rotations for tumbling effect
+  const spinsX = (4 + Math.floor(Math.random() * 3)) * 360;
+  const spinsY = (4 + Math.floor(Math.random() * 3)) * 360;
+  const finalRx = endRx + spinsX;
+  const finalRy = endRy + spinsY;
 
-  // Hide result
-  document.getElementById('diceActName').classList.remove('visible');
-  document.getElementById('diceActHint').classList.remove('visible');
+  // Build keyframe dynamically so bounce is physics-accurate
+  const shadow = document.getElementById('diceShadow');
+  const dice   = document.getElementById('dice3d');
 
-  // Trigger animation
-  dice.classList.remove('rolling');
-  void dice.offsetWidth; // force reflow
-  dice.classList.add('rolling');
+  // Inject @keyframes
+  if (diceStyleEl) diceStyleEl.remove();
+  diceStyleEl = document.createElement('style');
+  diceStyleEl.textContent = `
+    @keyframes dice-real-roll {
+      0%   { transform: rotateX(18deg) rotateY(28deg) translateY(0px); }
+      15%  { transform: rotateX(${finalRx*.15}deg) rotateY(${finalRy*.15}deg) translateY(-30px); }
+      35%  { transform: rotateX(${finalRx*.38}deg) rotateY(${finalRy*.38}deg) translateY(-50px); }
+      55%  { transform: rotateX(${finalRx*.60}deg) rotateY(${finalRy*.60}deg) translateY(-20px); }
+      68%  { transform: rotateX(${finalRx*.75}deg) rotateY(${finalRy*.75}deg) translateY(-32px); }
+      80%  { transform: rotateX(${finalRx*.88}deg) rotateY(${finalRy*.88}deg) translateY(-10px); }
+      90%  { transform: rotateX(${finalRx*.95}deg) rotateY(${finalRy*.95}deg) translateY(-6px); }
+      96%  { transform: rotateX(${finalRx}deg) rotateY(${finalRy}deg) translateY(-2px); }
+      100% { transform: rotateX(${finalRx}deg) rotateY(${finalRy}deg) translateY(0px); }
+    }`;
+  document.head.appendChild(diceStyleEl);
 
+  dice.style.animation = 'none';
+  void dice.offsetWidth;
+  dice.style.animation = 'dice-real-roll 2s cubic-bezier(0.15, 0, 0.35, 1) forwards';
+
+  // Animate shadow: shrinks when dice is "airborne" mid-roll, returns at land
+  shadow.classList.add('airborne');
+  setTimeout(() => shadow.classList.remove('airborne'), 1700);
+
+  // Reveal result after landing
   setTimeout(() => {
     diceRolling = false;
-    document.getElementById('diceActName').textContent = act.icon + '  ' + act.name;
+    dice.style.animation = 'none';
+    dice.style.transform = `rotateX(${finalRx}deg) rotateY(${finalRy}deg)`;
+
+    document.getElementById('diceActIcon').textContent = act.icon;
+    document.getElementById('diceActName').textContent = act.name;
     document.getElementById('diceActHint').textContent = act.hint;
+    document.getElementById('diceActIcon').classList.add('visible');
     document.getElementById('diceActName').classList.add('visible');
     document.getElementById('diceActHint').classList.add('visible');
-  }, 1600);
+  }, 2050);
 }
 
-// Wire up scratch events after DOM ready
+// Wire up scratch events and init dice after DOM ready
 window.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('scratchCanvas');
   canvas.addEventListener('mousedown',  e => { isDrawing = true; doScratch(e); });
@@ -1443,6 +1566,7 @@ window.addEventListener('DOMContentLoaded', () => {
   canvas.addEventListener('touchmove',  e => doScratch(e),                        { passive: false });
   canvas.addEventListener('touchend',   () => isDrawing = false);
   resetScratch();
+  resetDice();
 });
 </script>
 </body>
