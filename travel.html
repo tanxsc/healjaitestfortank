@@ -606,82 +606,108 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0;
       cursor: pointer;
       user-select: none;
     }
 
+    /* Perspective wrapper — MUST NOT have filter/opacity/will-change */
     .dice-stage {
-      perspective: 480px;
-      perspective-origin: 50% 40%;
-      width: 160px;
-      height: 160px;
+      perspective: 340px;
+      perspective-origin: 50% 35%;
+      width: 200px;
+      height: 200px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
     .dice-3d {
-      width: 120px;
-      height: 120px;
+      width: 140px;
+      height: 140px;
       position: relative;
       transform-style: preserve-3d;
-      transform: rotateX(20deg) rotateY(30deg);
-      /* default resting tilt */
-      filter: drop-shadow(0 18px 14px rgba(0,0,0,.28));
+      /* NOTE: no filter here — filter breaks preserve-3d in all browsers */
+      transform: rotateX(22deg) rotateY(34deg);
     }
 
-    /* Roll animation injected via JS keyframes for dynamic end angle */
     .dice-face {
       position: absolute;
-      width: 120px;
-      height: 120px;
-      border-radius: 18px;
+      width: 140px;
+      height: 140px;
+      border-radius: 20px;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
-      padding: 14px;
-      gap: 0;
+      padding: 16px;
+      box-sizing: border-box;
+      /* Outline gives depth on edge */
+      outline: 2px solid rgba(0,0,0,.08);
     }
-    /* Face shading — simulate ambient light from top-left */
-    .face-front  { transform: translateZ(60px);            background: #f8f4f0; }
-    .face-back   { transform: rotateY(180deg) translateZ(60px); background: #ddd8d2; }
-    .face-right  { transform: rotateY(90deg)  translateZ(60px); background: #e8e3de; }
-    .face-left   { transform: rotateY(-90deg) translateZ(60px); background: #ccc7c2; }
-    .face-top    { transform: rotateX(90deg)  translateZ(60px); background: #f4f0ec; }
-    .face-bottom { transform: rotateX(-90deg) translateZ(60px); background: #b8b4b0; }
 
-    /* Pips */
+    /*
+      Each face has its own gradient to simulate a single light source
+      coming from top-left-front. front/top = bright, back/bottom = dark.
+    */
+    .face-front  {
+      transform: translateZ(70px);
+      background: linear-gradient(145deg, #ffffff 0%, #f0ebe4 100%);
+    }
+    .face-back   {
+      transform: rotateY(180deg) translateZ(70px);
+      background: linear-gradient(145deg, #cdc8c2 0%, #b8b3ac 100%);
+    }
+    .face-right  {
+      transform: rotateY(90deg) translateZ(70px);
+      background: linear-gradient(145deg, #dedad4 0%, #cac5be 100%);
+    }
+    .face-left   {
+      transform: rotateY(-90deg) translateZ(70px);
+      background: linear-gradient(145deg, #c8c3bc 0%, #b5b0a8 100%);
+    }
+    .face-top    {
+      transform: rotateX(90deg) translateZ(70px);
+      background: linear-gradient(145deg, #f8f4ef 0%, #ece7e0 100%);
+    }
+    .face-bottom {
+      transform: rotateX(-90deg) translateZ(70px);
+      background: linear-gradient(145deg, #aaa59e 0%, #989390 100%);
+    }
+
+    /* Pip dots */
     .pip {
-      width: 100%;
-      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .pip::after {
+    .pip.has-dot::after {
       content: '';
-      width: 13px;
-      height: 13px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
-      background: #3a2a20;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.15);
+      background: radial-gradient(circle at 35% 35%, #5a3a28, #2a1a10);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,.5), 0 1px 2px rgba(255,255,255,.2);
       display: block;
     }
-    .pip.empty::after { display: none; }
 
-    /* Floor shadow */
-    .dice-shadow {
-      width: 100px;
-      height: 20px;
-      background: radial-gradient(ellipse, rgba(0,0,0,.25) 0%, transparent 70%);
-      border-radius: 50%;
-      margin-top: -4px;
-      transition: transform .15s, opacity .15s;
+    /* Floor shadow — separate element so no transform-context pollution */
+    .dice-shadow-wrap {
+      width: 140px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: -10px;
     }
-    .dice-shadow.airborne { transform: scaleX(1.6) scaleY(.6); opacity: .12; }
+    .dice-shadow {
+      width: 110px;
+      height: 18px;
+      background: radial-gradient(ellipse, rgba(0,0,0,.32) 0%, transparent 72%);
+      border-radius: 50%;
+      transition: width .2s, opacity .2s;
+    }
+    .dice-shadow.airborne { width: 60px; opacity: .15; }
 
     /* Tap hint */
     .dice-tap-hint {
@@ -906,7 +932,7 @@
           <!-- faces built by JS with pip grids -->
         </div>
       </div>
-      <div class="dice-shadow" id="diceShadow"></div>
+      <div class="dice-shadow-wrap"><div class="dice-shadow" id="diceShadow"></div></div>
       <div class="dice-tap-hint" id="diceTapHint">แตะเพื่อทอย</div>
     </div>
 
@@ -1458,7 +1484,7 @@ function buildDiceFaces() {
     const layout = PIP_LAYOUTS[val];
     layout.forEach(has => {
       const cell = document.createElement('div');
-      cell.className = has ? 'pip' : 'pip empty';
+      cell.className = has ? 'pip has-dot' : 'pip';
       face.appendChild(cell);
     });
     dice.appendChild(face);
@@ -1478,7 +1504,7 @@ function resetDice() {
   const dice = document.getElementById('dice3d');
   if (diceStyleEl) { diceStyleEl.remove(); diceStyleEl = null; }
   dice.style.animation = 'none';
-  dice.style.transform = 'rotateX(18deg) rotateY(28deg)';
+  dice.style.transform = 'rotateX(22deg) rotateY(34deg)';
 
   document.getElementById('diceShadow').classList.remove('airborne');
   document.getElementById('diceTapHint').classList.remove('hidden-hint');
@@ -1520,27 +1546,25 @@ function rollDice() {
   diceStyleEl = document.createElement('style');
   diceStyleEl.textContent = `
     @keyframes dice-real-roll {
-      0%   { transform: rotateX(18deg) rotateY(28deg) translateY(0px); }
-      15%  { transform: rotateX(${finalRx*.15}deg) rotateY(${finalRy*.15}deg) translateY(-30px); }
-      35%  { transform: rotateX(${finalRx*.38}deg) rotateY(${finalRy*.38}deg) translateY(-50px); }
-      55%  { transform: rotateX(${finalRx*.60}deg) rotateY(${finalRy*.60}deg) translateY(-20px); }
-      68%  { transform: rotateX(${finalRx*.75}deg) rotateY(${finalRy*.75}deg) translateY(-32px); }
-      80%  { transform: rotateX(${finalRx*.88}deg) rotateY(${finalRy*.88}deg) translateY(-10px); }
-      90%  { transform: rotateX(${finalRx*.95}deg) rotateY(${finalRy*.95}deg) translateY(-6px); }
-      96%  { transform: rotateX(${finalRx}deg) rotateY(${finalRy}deg) translateY(-2px); }
-      100% { transform: rotateX(${finalRx}deg) rotateY(${finalRy}deg) translateY(0px); }
+      0%   { transform: rotateX(22deg)            rotateY(34deg)            translateY(0px);   }
+      15%  { transform: rotateX(${finalRx*.15}deg) rotateY(${finalRy*.15}deg) translateY(-36px); }
+      35%  { transform: rotateX(${finalRx*.38}deg) rotateY(${finalRy*.38}deg) translateY(-56px); }
+      55%  { transform: rotateX(${finalRx*.60}deg) rotateY(${finalRy*.60}deg) translateY(-22px); }
+      68%  { transform: rotateX(${finalRx*.76}deg) rotateY(${finalRy*.76}deg) translateY(-36px); }
+      80%  { transform: rotateX(${finalRx*.88}deg) rotateY(${finalRy*.88}deg) translateY(-12px); }
+      90%  { transform: rotateX(${finalRx*.95}deg) rotateY(${finalRy*.95}deg) translateY(-6px);  }
+      96%  { transform: rotateX(${finalRx}deg)      rotateY(${finalRy}deg)      translateY(-2px);  }
+      100% { transform: rotateX(${finalRx}deg)      rotateY(${finalRy}deg)      translateY(0px);   }
     }`;
   document.head.appendChild(diceStyleEl);
 
   dice.style.animation = 'none';
   void dice.offsetWidth;
-  dice.style.animation = 'dice-real-roll 2s cubic-bezier(0.15, 0, 0.35, 1) forwards';
+  dice.style.animation = 'dice-real-roll 2.2s cubic-bezier(0.15, 0, 0.35, 1) forwards';
 
-  // Animate shadow: shrinks when dice is "airborne" mid-roll, returns at land
   shadow.classList.add('airborne');
-  setTimeout(() => shadow.classList.remove('airborne'), 1700);
+  setTimeout(() => shadow.classList.remove('airborne'), 1800);
 
-  // Reveal result after landing
   setTimeout(() => {
     diceRolling = false;
     dice.style.animation = 'none';
@@ -1552,7 +1576,7 @@ function rollDice() {
     document.getElementById('diceActIcon').classList.add('visible');
     document.getElementById('diceActName').classList.add('visible');
     document.getElementById('diceActHint').classList.add('visible');
-  }, 2050);
+  }, 2250);
 }
 
 // Wire up scratch events and init dice after DOM ready
