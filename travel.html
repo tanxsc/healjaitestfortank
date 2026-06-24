@@ -853,6 +853,16 @@
     }
     .slide-card.winner { animation: slide-pulse .5s ease 2; }
 
+    /* ─── FORTUNE TELLER ────────────────────────────────────────── */
+    #fortune-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.2rem; }
+
+    canvas#fortuneCanvas {
+      width: min(300px, 88vw);
+      height: min(300px, 88vw);
+      cursor: default;
+      border-radius: 8px;
+    }
+
     /* ─── Hidden utility ───────────────────────────────────────── */
     .hidden { display: none !important; }
 
@@ -887,6 +897,7 @@
     <button id="btn-mode-lucky"   onclick="setMode('lucky')">🎁 กล่องลุ้น</button>
     <button id="btn-mode-dice"    onclick="setMode('dice')">🎲 ลูกเต๋า</button>
     <button id="btn-mode-slide"   onclick="setMode('slide')">🎞️ สไลด์</button>
+    <button id="btn-mode-fortune" onclick="setMode('fortune')">🔮 พับกระดาษ</button>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════ -->
@@ -1075,6 +1086,26 @@
     </div>
   </section>
 
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- FORTUNE TELLER MODE                                       -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <section id="fortune-section" class="hidden">
+    <p class="instruction" id="ftInstruction">แตะสีที่ชอบเพื่อเริ่ม!</p>
+
+    <canvas id="fortuneCanvas" width="600" height="660"></canvas>
+
+    <div class="result-toast" id="fortuneResult">
+      <div class="toast-label">กิจกรรมของคุณคือ</div>
+      <div class="toast-icon" id="fortuneIcon"></div>
+      <div class="toast-name" id="fortuneName"></div>
+      <div style="font-size:.8rem;color:var(--brown-lt);margin-top:.2rem" id="fortuneHint"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-reset" onclick="resetFortune()">↺ เริ่มใหม่</button>
+    </div>
+  </section>
+
   <a class="back-link" href="index.html">← กลับแผนที่</a>
 </div>
 
@@ -1113,7 +1144,7 @@ for (let i = 0; i < 18; i++) {
 }
 
 // ─── Mode switching ───────────────────────────────────────────────
-const MODES = ['card', 'wheel', 'slot', 'scratch', 'lucky', 'dice', 'slide'];
+const MODES = ['card', 'wheel', 'slot', 'scratch', 'lucky', 'dice', 'slide', 'fortune'];
 function setMode(mode) {
   MODES.forEach(m => {
     document.getElementById(m + '-section').classList.toggle('hidden', m !== mode);
@@ -1125,6 +1156,7 @@ function setMode(mode) {
   if (mode === 'lucky')   resetBox();
   if (mode === 'dice')    resetDice();
   if (mode === 'slide')   resetSlide();
+  if (mode === 'fortune') resetFortune();
 }
 
 // ─── CARD FLIP ────────────────────────────────────────────────────
@@ -1893,17 +1925,368 @@ function rollDice() {
 
 // Wire up scratch events and init dice after DOM ready
 window.addEventListener('DOMContentLoaded', () => {
-  const canvas = document.getElementById('scratchCanvas');
-  canvas.addEventListener('mousedown',  e => { isDrawing = true; doScratch(e); });
-  canvas.addEventListener('mousemove',  e => doScratch(e));
-  canvas.addEventListener('mouseup',    () => isDrawing = false);
-  canvas.addEventListener('mouseleave', () => isDrawing = false);
-  canvas.addEventListener('touchstart', e => { isDrawing = true; doScratch(e); }, { passive: false });
-  canvas.addEventListener('touchmove',  e => doScratch(e),                        { passive: false });
-  canvas.addEventListener('touchend',   () => isDrawing = false);
+  // Scratch events
+  const scrCanvas = document.getElementById('scratchCanvas');
+  scrCanvas.addEventListener('mousedown',  e => { isDrawing = true; doScratch(e); });
+  scrCanvas.addEventListener('mousemove',  e => doScratch(e));
+  scrCanvas.addEventListener('mouseup',    () => isDrawing = false);
+  scrCanvas.addEventListener('mouseleave', () => isDrawing = false);
+  scrCanvas.addEventListener('touchstart', e => { isDrawing = true; doScratch(e); }, { passive: false });
+  scrCanvas.addEventListener('touchmove',  e => doScratch(e),                        { passive: false });
+  scrCanvas.addEventListener('touchend',   () => isDrawing = false);
   resetScratch();
   resetDice();
+
+  // Fortune teller events
+  const ftC = document.getElementById('fortuneCanvas');
+  ftC.addEventListener('click',     ftCanvasClick);
+  ftC.addEventListener('mousemove', ftCanvasHover);
+  ftC.addEventListener('touchstart', e => { e.preventDefault(); ftCanvasClick(e.touches[0]); }, { passive: false });
+  resetFortune();
 });
+
+// ─── FORTUNE TELLER (พับกระดาษเสี่ยงทาย) ───────────────────────────
+const FT_W = 600, FT_H = 660;
+const FT_CX = FT_W / 2, FT_CY = FT_H / 2 - 20;
+const FT_HS = 210; // half-size of diamond
+
+const FT_OUTER_COLORS  = ['#f2a8cc','#a8d4a8','#a8c4e8','#d4b8e8'];
+const FT_INNER_COLORS  = ['#fde8f4','#e8fde8','#e8f0fd','#f0e8fd'];
+const FT_COLOR_NAMES   = ['🩷 ชมพู','💚 เขียว','💙 ฟ้า','💜 ม่วง'];
+// Direction each outer flap travels when opening (diagonal outward)
+const FT_DIRS = [
+  { dx: -0.707, dy: -0.707 }, // TL
+  { dx:  0.707, dy: -0.707 }, // TR
+  { dx:  0.707, dy:  0.707 }, // BR
+  { dx: -0.707, dy:  0.707 }, // BL
+];
+// Label positions inside each outer flap (in unshifted coordinates)
+const FT_LABEL_WEIGHTS = [
+  [0.25, 0.25, 0.5],  // TL: weight toward top + left vertices
+  [0.25, 0.5, 0.25],  // TR
+  [0.25, 0.5, 0.25],  // BR
+  [0.25, 0.25, 0.5],  // BL
+];
+
+let ftPhase        = 'colors'; // 'colors'|'counting'|'numbers'|'reveal'|'done'
+let ftOpenAmt      = 0;
+let ftAnimId2      = null;
+let ftActivities2  = [];
+let ftHoverIdx     = -1;
+let ftRevealIdx    = -1;
+
+function ftGetVerts(openAmt) {
+  const cx = FT_CX, cy = FT_CY, hs = FT_HS;
+  const T = { x: cx,      y: cy - hs }; // top
+  const R = { x: cx + hs, y: cy      }; // right
+  const B = { x: cx,      y: cy + hs }; // bottom
+  const L = { x: cx - hs, y: cy      }; // left
+  const C = { x: cx,      y: cy      }; // center
+
+  // 4 outer triangles: [center, v1, v2]
+  const outerBase = [
+    [C, T, L], // TL (pink)
+    [C, T, R], // TR (green)
+    [C, R, B], // BR (blue)
+    [C, B, L], // BL (purple)
+  ];
+  const offset = openAmt * 88;
+  const outer = outerBase.map((tri, i) => {
+    const { dx, dy } = FT_DIRS[i];
+    return tri.map(v => ({ x: v.x + dx * offset, y: v.y + dy * offset }));
+  });
+
+  // Inner triangles (smaller, stay put — revealed underneath outer flaps)
+  const ihs = hs * 0.5;
+  const IT = { x: cx,       y: cy - ihs };
+  const IR = { x: cx + ihs, y: cy       };
+  const IB = { x: cx,       y: cy + ihs };
+  const IL = { x: cx - ihs, y: cy       };
+  const IC = { x: cx,       y: cy       };
+  const inner = [
+    [IC, IT, IL], // 1 (TL)
+    [IC, IT, IR], // 2 (TR)
+    [IC, IR, IB], // 3 (BR)
+    [IC, IB, IL], // 4 (BL)
+  ];
+  return { outer, inner };
+}
+
+function ftCentroid(tri) {
+  return {
+    x: (tri[0].x + tri[1].x + tri[2].x) / 3,
+    y: (tri[0].y + tri[1].y + tri[2].y) / 3,
+  };
+}
+
+function ftDrawTri(ctx, tri, fillStyle, strokeStyle = 'rgba(255,255,255,.65)', lw = 2.5) {
+  ctx.beginPath();
+  ctx.moveTo(tri[0].x, tri[0].y);
+  tri.slice(1).forEach(v => ctx.lineTo(v.x, v.y));
+  ctx.closePath();
+  ctx.fillStyle = fillStyle;
+  ctx.fill();
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = lw;
+  ctx.stroke();
+}
+
+function ftPointInTri(px, py, tri) {
+  const [a, b, c] = tri;
+  const s = (v1, v2, p) => (v1.x - p.x) * (v2.y - p.y) - (v2.x - p.x) * (v1.y - p.y);
+  const d1 = s(a, b, { x: px, y: py });
+  const d2 = s(b, c, { x: px, y: py });
+  const d3 = s(c, a, { x: px, y: py });
+  return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0));
+}
+
+function drawFortune(openAmt, hover = -1) {
+  const canvas = document.getElementById('fortuneCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, FT_W, FT_H);
+
+  const { outer, inner } = ftGetVerts(openAmt);
+
+  // ── Soft background glow ────────────────────────────────────
+  const glow = ctx.createRadialGradient(FT_CX, FT_CY, 30, FT_CX, FT_CY, FT_HS * 1.3);
+  glow.addColorStop(0, 'rgba(242,196,196,.15)');
+  glow.addColorStop(1, 'rgba(253,246,238,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, FT_W, FT_H);
+
+  // ── Crease lines on inner face (paper texture) ──────────────
+  if (openAmt > 0.1) {
+    const alpha = Math.min(1, openAmt * 2);
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.18;
+    ctx.strokeStyle = '#8b6c5c';
+    ctx.lineWidth = 1;
+    // Diagonal crease lines across center area
+    ctx.beginPath(); ctx.moveTo(FT_CX - FT_HS * 0.5, FT_CY); ctx.lineTo(FT_CX, FT_CY - FT_HS * 0.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(FT_CX + FT_HS * 0.5, FT_CY); ctx.lineTo(FT_CX, FT_CY - FT_HS * 0.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(FT_CX - FT_HS * 0.5, FT_CY); ctx.lineTo(FT_CX, FT_CY + FT_HS * 0.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(FT_CX + FT_HS * 0.5, FT_CY); ctx.lineTo(FT_CX, FT_CY + FT_HS * 0.5); ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── Inner triangles (revealed underneath outer flaps) ───────
+  inner.forEach((tri, i) => {
+    if (i === ftRevealIdx) return;
+    const grad = ctx.createLinearGradient(tri[1].x, tri[1].y, tri[0].x, tri[0].y);
+    grad.addColorStop(0, FT_INNER_COLORS[i]);
+    grad.addColorStop(1, '#ffffff');
+    ftDrawTri(ctx, tri, grad, 'rgba(200,160,140,.3)', 1.5);
+
+    if (ftPhase === 'numbers' || ftPhase === 'reveal') {
+      const c = ftCentroid(tri);
+      const isH = ftPhase === 'numbers' && i === hover;
+      ctx.save();
+      ctx.font = `bold ${isH ? 52 : 44}px Mitr, sans-serif`;
+      ctx.fillStyle = isH ? '#e87878' : '#8b6c5c';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // Subtle shadow on number
+      ctx.shadowColor = 'rgba(0,0,0,.12)';
+      ctx.shadowBlur  = 4;
+      ctx.fillText(String(i + 1), c.x, c.y);
+      ctx.restore();
+    }
+  });
+
+  // ── Outer flaps ─────────────────────────────────────────────
+  outer.forEach((tri, i) => {
+    const isH = i === hover;
+    const col = FT_OUTER_COLORS[i];
+
+    // Shadow under each flap
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.18)';
+    ctx.shadowBlur  = 12;
+    ctx.shadowOffsetX = 3 * FT_DIRS[i].dx;
+    ctx.shadowOffsetY = 3 * FT_DIRS[i].dy;
+
+    const grad = ctx.createLinearGradient(tri[0].x, tri[0].y, tri[1].x, tri[1].y);
+    grad.addColorStop(0, lighten(col, .12));
+    grad.addColorStop(1, col);
+    ftDrawTri(ctx, tri, grad, isH ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.6)', isH ? 4 : 2.5);
+    ctx.restore();
+
+    // Highlight overlay on hover
+    if (isH) {
+      ctx.beginPath();
+      ctx.moveTo(tri[0].x, tri[0].y);
+      tri.slice(1).forEach(v => ctx.lineTo(v.x, v.y));
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255,255,255,.22)';
+      ctx.fill();
+    }
+
+    // Fold-crease line (center to outer edge midpoint — paper realism)
+    const edgeMid = { x: (tri[1].x + tri[2].x) / 2, y: (tri[1].y + tri[2].y) / 2 };
+    ctx.beginPath();
+    ctx.moveTo(tri[0].x, tri[0].y);
+    ctx.lineTo(edgeMid.x, edgeMid.y);
+    ctx.strokeStyle = 'rgba(255,255,255,.3)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Decorative small heart/dot
+    const c = ftCentroid(tri);
+    ctx.font = '18px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha = isH ? 1 : 0.7;
+    ctx.fillText('🌸', c.x, c.y - 20);
+    ctx.globalAlpha = 1;
+
+    // Color name
+    if (ftPhase === 'colors') {
+      ctx.font = `bold 19px Sarabun, sans-serif`;
+      ctx.fillStyle = isH ? 'white' : 'rgba(70,35,15,.78)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = isH ? 'rgba(0,0,0,.3)' : 'transparent';
+      ctx.shadowBlur  = isH ? 4 : 0;
+      ctx.fillText(FT_COLOR_NAMES[i], c.x, c.y + 14);
+      ctx.shadowBlur = 0;
+    }
+  });
+
+  // ── Center hub ───────────────────────────────────────────────
+  const hubR = 14;
+  const hubG = ctx.createRadialGradient(FT_CX - 4, FT_CY - 4, 2, FT_CX, FT_CY, hubR);
+  hubG.addColorStop(0, '#ffffff');
+  hubG.addColorStop(1, '#f0d0c8');
+  ctx.beginPath();
+  ctx.arc(FT_CX, FT_CY, hubR + 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#e8a0a0';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(FT_CX, FT_CY, hubR, 0, Math.PI * 2);
+  ctx.fillStyle = hubG;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.8)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // ── Bottom label/instruction ─────────────────────────────────
+  const labelY = FT_CY + FT_HS + 52;
+  ctx.font = '17px Sarabun, sans-serif';
+  ctx.fillStyle = '#c4a882';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  let label = '';
+  if (ftPhase === 'colors')  label = 'แตะที่ช่องสีที่ชอบ 👆';
+  if (ftPhase === 'counting') label = 'กำลังนับ...';
+  if (ftPhase === 'numbers') label = 'แตะตัวเลขที่ต้องการ 👆';
+  if (ftPhase === 'reveal')  label = '✨ เปิดแล้ว!';
+  ctx.fillText(label, FT_CX, labelY);
+}
+
+function ftGetCanvasXY(e, canvas) {
+  const rect   = canvas.getBoundingClientRect();
+  const scaleX = FT_W / rect.width;
+  const scaleY = FT_H / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top)  * scaleY,
+  };
+}
+
+function ftHitTest(px, py, phase) {
+  const openAmt = phase === 'numbers' || phase === 'reveal' ? 1 : 0;
+  const { outer, inner } = ftGetVerts(openAmt);
+  const tris = (phase === 'numbers') ? inner : outer;
+  for (let i = 0; i < 4; i++) {
+    if (ftPointInTri(px, py, tris[i])) return i;
+  }
+  return -1;
+}
+
+function ftCanvasClick(e) {
+  const canvas = document.getElementById('fortuneCanvas');
+  const { x, y } = ftGetCanvasXY(e, canvas);
+  if (ftPhase === 'colors') {
+    const hit = ftHitTest(x, y, 'colors');
+    if (hit >= 0) ftSelectColor(hit);
+  } else if (ftPhase === 'numbers') {
+    const hit = ftHitTest(x, y, 'numbers');
+    if (hit >= 0) ftSelectNumber(hit);
+  }
+}
+
+function ftCanvasHover(e) {
+  if (ftPhase !== 'colors' && ftPhase !== 'numbers') return;
+  const canvas = document.getElementById('fortuneCanvas');
+  const { x, y } = ftGetCanvasXY(e, canvas);
+  const hit = ftHitTest(x, y, ftPhase);
+  ftHoverIdx = hit;
+  canvas.style.cursor = hit >= 0 ? 'pointer' : 'default';
+  drawFortune(ftOpenAmt, hit);
+}
+
+function ftSelectColor(idx) {
+  if (ftPhase !== 'colors') return;
+  ftPhase = 'counting';
+  ftHoverIdx = -1;
+  const name = FT_COLOR_NAMES[idx].replace(/.*\s/, ''); // strip emoji
+  document.getElementById('ftInstruction').textContent = `${FT_COLOR_NAMES[idx]} — กำลังนับ...`;
+
+  // Open & close 3 times (simulating the counting finger motion)
+  const cycles = 3, cycleMs = 480, total = cycles * cycleMs * 2;
+  const t0 = performance.now();
+
+  function easeInOut(t) { return t < .5 ? 2*t*t : -1+(4-2*t)*t; }
+
+  function animCount(now) {
+    const elapsed = now - t0;
+    if (elapsed >= total) {
+      ftOpenAmt = 1;
+      drawFortune(1);
+      ftPhase = 'numbers';
+      document.getElementById('ftInstruction').textContent = 'เลือกตัวเลข 1 – 4!';
+      return;
+    }
+    const phase = (elapsed % (cycleMs * 2)) / (cycleMs * 2);
+    ftOpenAmt = phase < .5 ? easeInOut(phase * 2) : easeInOut((1 - phase) * 2);
+    drawFortune(ftOpenAmt);
+    ftAnimId2 = requestAnimationFrame(animCount);
+  }
+  ftAnimId2 = requestAnimationFrame(animCount);
+}
+
+function ftSelectNumber(idx) {
+  if (ftPhase !== 'numbers') return;
+  ftPhase    = 'reveal';
+  ftRevealIdx = idx;
+  ftHoverIdx  = -1;
+  document.getElementById('fortuneCanvas').style.cursor = 'default';
+
+  // Brief flash then show result
+  drawFortune(1);
+  setTimeout(() => {
+    const act = ftActivities2[idx];
+    document.getElementById('fortuneIcon').textContent = act.icon;
+    document.getElementById('fortuneName').textContent = act.name;
+    document.getElementById('fortuneHint').textContent = act.hint;
+    document.getElementById('fortuneResult').classList.add('visible');
+    document.getElementById('ftInstruction').textContent = '🎉 นี่คือกิจกรรมของคุณ!';
+  }, 250);
+}
+
+function resetFortune() {
+  if (ftAnimId2) { cancelAnimationFrame(ftAnimId2); ftAnimId2 = null; }
+  ftPhase     = 'colors';
+  ftOpenAmt   = 0;
+  ftHoverIdx  = -1;
+  ftRevealIdx = -1;
+  ftActivities2 = shuffle(activities).slice(0, 4);
+  document.getElementById('ftInstruction').textContent = 'แตะสีที่ชอบเพื่อเริ่ม!';
+  document.getElementById('fortuneResult').classList.remove('visible');
+  const c = document.getElementById('fortuneCanvas');
+  if (c) { c.style.cursor = 'default'; drawFortune(0); }
+}
 
 // ─── SLIDE SHUFFLE ───────────────────────────────────────────────
 const CARD_H = 200; // must match CSS .slide-card height
