@@ -762,47 +762,63 @@
     }
     .dice-act-hint.visible { opacity: 1; }
 
-    /* ─── SLIDE SHUFFLE ─────────────────────────────────────────── */
+    /* ─── SLIDE SHUFFLE (Film Strip) ───────────────────────────── */
     #slide-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.8rem; }
 
-    .slide-frame {
-      position: relative;
-      width: min(320px, 90vw);
-      height: 200px;
+    .film-strip-outer {
+      display: flex;
+      background: #111;
+      border-radius: 6px;
       overflow: hidden;
-      border-radius: 24px;
-      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06);
+      width: min(360px, 92vw);
     }
 
-    /* Top & bottom fade masks so cards blur in/out of view */
-    .slide-frame::before,
-    .slide-frame::after {
+    /* Sprocket holes on either side */
+    .film-perfs {
+      width: 26px;
+      flex-shrink: 0;
+      background-color: #1c1c1c;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='40'%3E%3Crect x='5' y='10' width='16' height='20' rx='3' fill='%23000'/%3E%3C/svg%3E");
+      background-repeat: repeat-y;
+    }
+
+    /* The visible film viewport */
+    .film-viewport {
+      flex: 1;
+      height: 280px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Dark fade at top and bottom edges */
+    .film-viewport::before,
+    .film-viewport::after {
       content: '';
       position: absolute;
       left: 0; right: 0;
-      height: 64px;
+      height: 72px;
       z-index: 4;
       pointer-events: none;
     }
-    .slide-frame::before {
+    .film-viewport::before {
       top: 0;
-      background: linear-gradient(to bottom, rgba(253,246,238,1) 0%, rgba(253,246,238,0) 100%);
+      background: linear-gradient(to bottom, rgba(0,0,0,.8) 0%, rgba(0,0,0,0) 100%);
     }
-    .slide-frame::after {
+    .film-viewport::after {
       bottom: 0;
-      background: linear-gradient(to top, rgba(253,246,238,1) 0%, rgba(253,246,238,0) 100%);
+      background: linear-gradient(to top, rgba(0,0,0,.8) 0%, rgba(0,0,0,0) 100%);
     }
 
-    /* Highlight bar behind the centre card */
+    /* Centre frame border */
     .slide-highlight {
       position: absolute;
       top: 50%;
       left: 0; right: 0;
-      height: 200px;
+      height: 280px;
       transform: translateY(-50%);
-      border-top: 2px solid var(--rose);
-      border-bottom: 2px solid var(--rose);
-      background: rgba(242,196,196,.08);
+      border-top: 2px solid rgba(255,245,140,.55);
+      border-bottom: 2px solid rgba(255,245,140,.55);
       z-index: 3;
       pointer-events: none;
     }
@@ -814,42 +830,70 @@
       will-change: transform;
     }
 
-    /* Each slide card */
+    /* Each photo frame */
     .slide-card {
       width: 100%;
-      height: 200px;
+      height: 280px;
       flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      gap: 1.1rem;
-      padding: 0 1.5rem;
-      transition: none;
-    }
-    .slide-card .sc-icon {
-      font-size: 2.8rem;
-      line-height: 1;
-      flex-shrink: 0;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,.12));
-    }
-    .slide-card .sc-text { display: flex; flex-direction: column; gap: .2rem; }
-    .slide-card .sc-name {
-      font-family: 'Mitr', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 500;
-      color: var(--brown);
-      line-height: 1.3;
-    }
-    .slide-card .sc-hint {
-      font-size: .8rem;
-      color: var(--brown-lt);
-      line-height: 1.4;
+      position: relative;
+      background-size: cover;
+      background-position: center;
+      background-color: #1a1a1a;
+      overflow: hidden;
     }
 
-    /* Winner card pulses when landed */
-    .slide-card.winner .sc-name { color: var(--rose); }
+    /* Gradient overlay for text legibility */
+    .slide-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 60%;
+      background: linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,0) 100%);
+      pointer-events: none;
+    }
+
+    .slide-card .sc-frame-num {
+      position: absolute;
+      top: 10px; left: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: .65rem;
+      color: rgba(255,245,140,.75);
+      z-index: 2;
+      letter-spacing: .08em;
+    }
+
+    .slide-card .sc-text {
+      position: absolute;
+      bottom: 14px; left: 14px; right: 14px;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      gap: .25rem;
+    }
+
+    .slide-card .sc-icon { font-size: 1.5rem; line-height: 1; }
+
+    .slide-card .sc-name {
+      font-family: 'Mitr', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #fff;
+      line-height: 1.3;
+      text-shadow: 0 1px 6px rgba(0,0,0,.9);
+    }
+
+    .slide-card .sc-hint {
+      font-size: .75rem;
+      color: rgba(255,255,255,.72);
+      line-height: 1.4;
+      text-shadow: 0 1px 4px rgba(0,0,0,.9);
+    }
+
+    /* Winner card highlight */
+    .slide-card.winner .sc-name { color: #ffe566; }
     @keyframes slide-pulse {
       0%,100% { transform: scale(1); }
-      50%      { transform: scale(1.03); }
+      50%      { transform: scale(1.02); }
     }
     .slide-card.winner { animation: slide-pulse .5s ease 2; }
 
@@ -1069,9 +1113,13 @@
   <section id="slide-section" class="hidden">
     <p class="instruction">กดปุ่มเพื่อสุ่ม — การ์ดจะเลื่อนผ่านแล้วหยุดที่กิจกรรมของคุณ!</p>
 
-    <div class="slide-frame" id="slideFrame">
-      <div class="slide-highlight"></div>
-      <div class="slide-reel" id="slideReel"></div>
+    <div class="film-strip-outer" id="slideFrame">
+      <div class="film-perfs"></div>
+      <div class="film-viewport">
+        <div class="slide-highlight"></div>
+        <div class="slide-reel" id="slideReel"></div>
+      </div>
+      <div class="film-perfs"></div>
     </div>
 
     <div class="result-toast" id="slideResult">
@@ -1112,18 +1160,18 @@
 <script>
 // ─── Activity data ───────────────────────────────────────────────
 const activities = [
-  { name: 'เดินรอบบ้าน 5 นาที',    icon: '🚶', hint: 'ออกไปรับอากาศบริสุทธิ์' },
-  { name: 'มองท้องฟ้า 1 นาที',     icon: '☁️', hint: 'หยุดพักสายตาจากหน้าจอ' },
-  { name: 'หาต้นไม้มาเพ่งดู',      icon: '🌿', hint: 'สังเกตรายละเอียดเล็กๆ' },
-  { name: 'โป๊ะเค้าไหน่!',          icon: '🗺️', hint: 'ลองไปคาเฟ่ใหม่สักที่' },
-  { name: 'ถ่ายรูป 3 อย่างที่สวย',  icon: '📸', hint: 'ฝึกมองโลกในแง่งาม' },
-  { name: 'ดีตรงรถ อย่างกระฉับ',   icon: '🚗', hint: 'ไดรฟ์สั้นๆ ชื่นใจ' },
-  { name: 'ตอบรับนัดที่ค้างอยู่',  icon: '📅', hint: 'จัดการสิ่งที่เลื่อนไปนาน' },
-  { name: 'เมทเทเลือกปลุกเพลง',    icon: '🎵', hint: 'เปิดเพลงใหม่ที่ไม่เคยฟัง' },
-  { name: 'ลุกขึ้นแล้วยืดตัว',     icon: '🧘', hint: '5 นาทีผ่อนคลาย' },
-  { name: 'โทรหาเพื่อนเก่า',       icon: '📞', hint: 'คุยแค่ 5 นาทีก็พอ' },
-  { name: 'จิบน้ำอุ่นช้าๆ',        icon: '☕', hint: 'อยู่กับตัวเองสักครู่' },
-  { name: 'วาดอะไรก็ได้ 1 อย่าง',  icon: '✏️', hint: 'ไม่ต้องสวยก็ได้' },
+  { name: 'เดินรอบบ้าน 5 นาที',    icon: '🚶', hint: 'ออกไปรับอากาศบริสุทธิ์', photo: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=640&h=360&fit=crop&auto=format&q=80' },
+  { name: 'มองท้องฟ้า 1 นาที',     icon: '☁️', hint: 'หยุดพักสายตาจากหน้าจอ',  photo: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=640&h=360&fit=crop&auto=format&q=80' },
+  { name: 'หาต้นไม้มาเพ่งดู',      icon: '🌿', hint: 'สังเกตรายละเอียดเล็กๆ',   photo: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=640&h=360&fit=crop&auto=format&q=80' },
+  { name: 'โป๊ะเค้าไหน่!',          icon: '🗺️', hint: 'ลองไปคาเฟ่ใหม่สักที่',   photo: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=640&h=360&fit=crop&auto=format&q=80' },
+  { name: 'ถ่ายรูป 3 อย่างที่สวย',  icon: '📸', hint: 'ฝึกมองโลกในแง่งาม',       photo: 'https://images.unsplash.com/photo-1452457750107-be9f8eee3f12?w=640&h=360&fit=crop&auto=format&q=80' },
+  { name: 'ดีตรงรถ อย่างกระฉับ',   icon: '🚗', hint: 'ไดรฟ์สั้นๆ ชื่นใจ',       photo: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=640&h=360&fit=crop&auto=format&q=80' },
+  { name: 'ตอบรับนัดที่ค้างอยู่',  icon: '📅', hint: 'จัดการสิ่งที่เลื่อนไปนาน', photo: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=640&h=360&fit=crop&auto=format&q=80' },
+  { name: 'เมทเทเลือกปลุกเพลง',    icon: '🎵', hint: 'เปิดเพลงใหม่ที่ไม่เคยฟัง', photo: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=640&h=360&fit=crop&auto=format&q=80' },
+  { name: 'ลุกขึ้นแล้วยืดตัว',     icon: '🧘', hint: '5 นาทีผ่อนคลาย',           photo: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=640&h=360&fit=crop&auto=format&q=80' },
+  { name: 'โทรหาเพื่อนเก่า',       icon: '📞', hint: 'คุยแค่ 5 นาทีก็พอ',         photo: 'https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?w=640&h=360&fit=crop&auto=format&q=80' },
+  { name: 'จิบน้ำอุ่นช้าๆ',        icon: '☕', hint: 'อยู่กับตัวเองสักครู่',      photo: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=640&h=360&fit=crop&auto=format&q=80' },
+  { name: 'วาดอะไรก็ได้ 1 อย่าง',  icon: '✏️', hint: 'ไม่ต้องสวยก็ได้',          photo: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=640&h=360&fit=crop&auto=format&q=80' },
 ];
 
 // ─── Petals ──────────────────────────────────────────────────────
@@ -2289,7 +2337,7 @@ function resetFortune() {
 }
 
 // ─── SLIDE SHUFFLE ───────────────────────────────────────────────
-const CARD_H = 200; // must match CSS .slide-card height
+const CARD_H = 280; // must match CSS .slide-card height
 let slideAnimId  = null;
 let slideRunning = false;
 let slidePool    = [];   // infinite repeated list of activities
@@ -2307,12 +2355,14 @@ function buildSlidePool() {
 function renderSlideReel() {
   const reel = document.getElementById('slideReel');
   reel.innerHTML = '';
-  slidePool.forEach(act => {
+  slidePool.forEach((act, i) => {
     const card = document.createElement('div');
     card.className = 'slide-card';
+    if (act.photo) card.style.backgroundImage = `url('${act.photo}')`;
     card.innerHTML = `
-      <div class="sc-icon">${act.icon}</div>
+      <div class="sc-frame-num">${String((i % activities.length) + 1).padStart(3, '0')}</div>
       <div class="sc-text">
+        <div class="sc-icon">${act.icon}</div>
         <div class="sc-name">${act.name}</div>
         <div class="sc-hint">${act.hint}</div>
       </div>`;
@@ -2329,7 +2379,6 @@ function resetSlide() {
   if (slideAnimId) { cancelAnimationFrame(slideAnimId); slideAnimId = null; }
   buildSlidePool();
   renderSlideReel();
-  // Start reel so that index 1 is centred in the 200px frame
   slideOffset = -(1 * CARD_H);
   setSlideTranslate(slideOffset);
   document.getElementById('slideResult').classList.remove('visible');
@@ -2352,9 +2401,8 @@ function startSlide() {
   slideWinnerIdx = winPoolIdx;
 
   // Target: centre the winner card in the 200px frame
-  // Frame centre = 100px from top; card centre = winPoolIdx * CARD_H + CARD_H/2
-  // translateY = frameCenter - cardCenter = 100 - (winPoolIdx * CARD_H + 100)
-  slideTarget = 100 - (winPoolIdx * CARD_H + CARD_H / 2);
+  // Frame centre = CARD_H/2 from top; card centre = winPoolIdx * CARD_H + CARD_H/2
+  slideTarget = (CARD_H / 2) - (winPoolIdx * CARD_H + CARD_H / 2);
 
   // We need to scroll from current position (near top) past lots of cards
   // Animate with easeOutQuart for a smooth decel feel
