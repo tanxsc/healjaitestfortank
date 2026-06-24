@@ -1592,18 +1592,47 @@ function spinCarousel() {
   document.getElementById('cardBtn').disabled = true;
   closeCardResult();
 
-  // Clear previous winner
-  document.querySelectorAll('#carouselTrack .c-card.winner')
-    .forEach(c => c.classList.remove('winner', 'flipped'));
+  // Rebuild pool and snap silently to start — guarantees the same
+  // full-distance sweep every single time the user clicks
+  carouselPool = [];
+  for (let r = 0; r < 5; r++) carouselPool.push(...shuffle(activities));
+  const track = document.getElementById('carouselTrack');
+  track.style.transition = 'none';
+  track.innerHTML = '';
+  carouselPool.forEach((act, i) => {
+    const card = document.createElement('div');
+    card.className = 'c-card';
+    const front = document.createElement('div');
+    front.className = 'c-card-face c-front';
+    if (act.photo) front.style.backgroundImage = `url('${act.photo}')`;
+    front.innerHTML = `
+      <div class="c-photo-text">
+        <div class="c-act-icon">${act.icon}</div>
+        <div class="c-act-name">${act.name}</div>
+        <div class="c-act-hint">${act.hint}</div>
+      </div>`;
+    card.innerHTML = `
+      <div class="c-card-face c-back">
+        <span class="c-icon">🌸</span>
+        <div class="c-pattern"></div>
+      </div>`;
+    card.appendChild(front);
+    card.addEventListener('click', spinCarousel);
+    track.appendChild(card);
+  });
 
-  // Pick winner deep in the pool (last 30%)
-  const winIdx = Math.floor(POOL * 0.6 + Math.random() * POOL * 0.3);
+  // Reset to card 8 (same as initial position)
+  carouselOffset = offsetForCard(8);
+  setCarouselX(carouselOffset);
+
+  // Pick winner from cards 36–52 — always far from start
+  const winIdx = 36 + Math.floor(Math.random() * 16);
   carouselWinIdx = winIdx;
 
   const targetX  = offsetForCard(winIdx);
   const startX   = carouselOffset;
   const dist     = targetX - startX;
-  const duration = 2200 + Math.random() * 700;
+  const duration = 2400 + Math.random() * 600;
   let   t0       = null;
 
   function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
