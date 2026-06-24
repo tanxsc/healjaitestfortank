@@ -38,11 +38,105 @@
       position: fixed;
       inset: 0;
       z-index: 0;
-      background:
-        radial-gradient(ellipse 80% 50% at 50% 100%, #d8ead4 0%, transparent 70%),
-        radial-gradient(ellipse 60% 40% at 20% 90%, #e8d5c4 0%, transparent 60%),
-        linear-gradient(170deg, #fef0e8 0%, #fdf6ee 40%, #edf5eb 100%);
       pointer-events: none;
+      /* Sky: warm cream top → soft mint-sage bottom */
+      background:
+        radial-gradient(ellipse 70% 45% at 78% 18%, rgba(255,235,200,.55) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 35% at 18% 12%, rgba(255,220,210,.45) 0%, transparent 60%),
+        linear-gradient(175deg, #fef3ea 0%, #fdf8f0 35%, #f0f7ec 70%, #e6f2e2 100%);
+      overflow: hidden;
+    }
+
+    /* Ground strip at bottom */
+    .garden-bg::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 22%;
+      background:
+        radial-gradient(ellipse 120% 60% at 50% 100%, #c8dfc3 0%, #d8ead4 45%, transparent 75%),
+        linear-gradient(to top, #c0d9ba 0%, #d4e8cf 40%, transparent 100%);
+    }
+
+    /* Soft sun glow top-right */
+    .garden-bg::after {
+      content: '';
+      position: absolute;
+      top: -80px; right: -60px;
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,230,160,.28) 0%, transparent 70%);
+    }
+
+    /* Grass blades row */
+    .garden-grass {
+      position: absolute;
+      bottom: 18%;
+      left: 0; right: 0;
+      height: 60px;
+      background:
+        /* repeating blade pattern via radial gradients */
+        repeating-linear-gradient(
+          to right,
+          transparent 0px,
+          transparent 14px,
+          rgba(130,180,120,.25) 14px,
+          rgba(130,180,120,.25) 16px
+        );
+      mask-image: linear-gradient(to top, black 0%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to top, black 0%, transparent 100%);
+    }
+
+    /* Left cluster of bushes */
+    .garden-bush-l {
+      position: absolute;
+      bottom: 16%;
+      left: -30px;
+      width: 220px; height: 130px;
+      background:
+        radial-gradient(ellipse 55% 70% at 30% 80%, #8fbe84 0%, #a8d09e 50%, transparent 75%),
+        radial-gradient(ellipse 45% 60% at 65% 90%, #9dc992 0%, #b5d9aa 55%, transparent 75%),
+        radial-gradient(ellipse 40% 55% at 50% 70%, #7aaa70 0%, #93c288 60%, transparent 80%);
+    }
+
+    /* Right cluster of bushes */
+    .garden-bush-r {
+      position: absolute;
+      bottom: 14%;
+      right: -40px;
+      width: 260px; height: 160px;
+      background:
+        radial-gradient(ellipse 50% 65% at 70% 80%, #8fbe84 0%, #a8d09e 55%, transparent 75%),
+        radial-gradient(ellipse 40% 55% at 40% 90%, #9dc992 0%, #b5d9aa 55%, transparent 75%),
+        radial-gradient(ellipse 45% 60% at 55% 68%, #7aaa70 0%, #93c288 60%, transparent 80%);
+    }
+
+    /* Small scattered flowers */
+    .garden-flowers {
+      position: absolute;
+      bottom: 20%;
+      left: 0; right: 0;
+      height: 40px;
+      background:
+        radial-gradient(circle 5px at 12% 60%, #f2c4c4 0%, transparent 100%),
+        radial-gradient(circle 4px at 23% 40%, #fde0c8 0%, transparent 100%),
+        radial-gradient(circle 5px at 38% 70%, #e8c8e8 0%, transparent 100%),
+        radial-gradient(circle 4px at 54% 45%, #f2c4c4 0%, transparent 100%),
+        radial-gradient(circle 5px at 67% 65%, #fde0c8 0%, transparent 100%),
+        radial-gradient(circle 4px at 80% 40%, #c8e0c8 0%, transparent 100%),
+        radial-gradient(circle 5px at 91% 60%, #f2c4c4 0%, transparent 100%);
+    }
+
+    /* Mid-ground soft hills */
+    .garden-hills {
+      position: absolute;
+      bottom: 30%;
+      left: 0; right: 0;
+      height: 120px;
+      background:
+        radial-gradient(ellipse 45% 80% at 15% 100%, rgba(180,215,174,.35) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 75% at 85% 100%, rgba(185,220,178,.3) 0%, transparent 65%),
+        radial-gradient(ellipse 35% 60% at 50% 100%, rgba(175,210,168,.25) 0%, transparent 70%);
     }
     /* Floating petals */
     .petal {
@@ -921,7 +1015,13 @@
 <body>
 
 <!-- Garden background -->
-<div class="garden-bg"></div>
+<div class="garden-bg">
+  <div class="garden-hills"></div>
+  <div class="garden-grass"></div>
+  <div class="garden-bush-l"></div>
+  <div class="garden-bush-r"></div>
+  <div class="garden-flowers"></div>
+</div>
 
 <!-- Floating petals (injected by JS) -->
 
