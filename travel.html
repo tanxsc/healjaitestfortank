@@ -134,12 +134,13 @@
 
     /* ─── CARD CAROUSEL ─────────────────────────────────────────── */
 
-    /* Scrolling viewport */
+    /* Scrolling viewport — clip only horizontally so nothing pokes out sideways */
     .carousel-wrap {
       position: relative;
       width: min(380px, 94vw);
-      height: 300px; /* 220 card + 60 float headroom + buffer */
-      overflow: hidden;
+      height: 240px;
+      overflow-x: clip;
+      overflow-y: visible;
     }
 
     /* Side fade masks */
@@ -155,9 +156,9 @@
     /* The sliding row of cards */
     .carousel-track {
       position: absolute;
-      bottom: 20px; /* breathing room below for float clearance */
+      top: 0;
       display: flex;
-      align-items: flex-end;
+      align-items: flex-start;
       gap: 14px;
       will-change: transform;
     }
@@ -179,9 +180,6 @@
       border-radius: 18px;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 1rem; text-align: center; gap: .5rem;
     }
 
     /* Card back (face-down) */
@@ -189,6 +187,8 @@
       background: linear-gradient(135deg, #d4c4b8, #c4b4a4);
       box-shadow: 0 4px 18px rgba(0,0,0,.13);
       border: 3px solid rgba(255,255,255,.5);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
     }
     .c-back .c-pattern {
       width: 80%; height: 80%;
@@ -200,43 +200,118 @@
     }
     .c-back .c-icon { position: absolute; font-size: 2rem; opacity: .45; }
 
-    /* Card front (activity) */
+    /* Card front — full-bleed photo like film strip */
     .c-front {
       transform: rotateY(180deg);
       border: 3px solid rgba(255,255,255,.72);
+      background-size: cover;
+      background-position: center;
+      background-color: #2a2a2a;
+      justify-content: flex-end;
     }
-    .c-front .c-act-icon { font-size: 2.4rem; }
-    .c-front .c-act-name {
-      font-family: 'Mitr', sans-serif;
-      font-size: 1rem; font-weight: 500;
-      color: white; line-height: 1.35;
-    }
-    .c-front .c-act-hint {
-      font-size: .75rem; color: rgba(255,255,255,.82); line-height: 1.4;
-    }
-
-    /* Flipped state — reveals front */
-    .c-card.flipped { transform: rotateY(180deg); }
-
-    /* Winner floats up after flip */
-    .c-card.flipped.winner {
-      transform: rotateY(180deg) translateY(-56px) scale(1.22);
-      box-shadow: 0 28px 72px rgba(0,0,0,.22);
-      z-index: 10;
-    }
-    /* Separate glow pulse on pseudo-element so transform isn't overridden by animation */
-    .c-card.flipped.winner::after {
+    /* Dark gradient overlay for text legibility */
+    .c-front::before {
       content: '';
-      position: absolute; inset: -10px;
-      border-radius: 26px;
-      background: radial-gradient(ellipse at 50% 60%, rgba(242,160,160,.55), transparent 70%);
-      animation: winner-glow 2s ease-in-out infinite;
+      position: absolute; inset: 0;
+      border-radius: 15px;
+      background: linear-gradient(to top, rgba(0,0,0,.82) 0%, rgba(0,0,0,.1) 55%, transparent 100%);
       pointer-events: none;
     }
-    @keyframes winner-glow {
-      0%,100% { opacity: .5; transform: scale(1); }
-      50%      { opacity: 1;  transform: scale(1.08); }
+    .c-photo-text {
+      position: relative; z-index: 1;
+      padding: 12px 14px;
+      display: flex; flex-direction: column; gap: .2rem;
     }
+    .c-act-icon { font-size: 1.5rem; line-height: 1; }
+    .c-act-name {
+      font-family: 'Mitr', sans-serif;
+      font-size: .92rem; font-weight: 500;
+      color: white; line-height: 1.3;
+      text-shadow: 0 1px 5px rgba(0,0,0,.9);
+    }
+    .c-act-hint {
+      font-size: .7rem; color: rgba(255,255,255,.78); line-height: 1.4;
+      text-shadow: 0 1px 3px rgba(0,0,0,.9);
+    }
+
+    /* Flipped state */
+    .c-card.flipped { transform: rotateY(180deg); }
+
+    /* Winner — bright border glow (no translate; overlay handles the big reveal) */
+    .c-card.flipped.winner {
+      transform: rotateY(180deg);
+      box-shadow: 0 0 0 3px #fff, 0 8px 40px rgba(242,160,160,.7);
+      z-index: 5;
+    }
+
+    /* ─── SHAREABLE RESULT OVERLAY ───────────────────────────────── */
+    .card-result-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .4s;
+    }
+    .card-result-overlay.visible {
+      opacity: 1; pointer-events: all;
+    }
+    .cro-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(70,44,28,.42);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .cro-card {
+      position: relative; z-index: 1;
+      width: min(320px, 86vw);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 40px 100px rgba(0,0,0,.45);
+      transform: scale(.78) translateY(48px);
+      transition: transform .55s cubic-bezier(.34,1.56,.64,1);
+    }
+    .card-result-overlay.visible .cro-card {
+      transform: scale(1) translateY(0);
+    }
+    .cro-photo {
+      width: 100%; height: 270px;
+      background-size: cover; background-position: center;
+      position: relative;
+    }
+    .cro-photo::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.78) 0%, rgba(0,0,0,.05) 55%, transparent 100%);
+    }
+    .cro-photo-text {
+      position: absolute; bottom: 18px; left: 20px; right: 20px; z-index: 1;
+      display: flex; flex-direction: column; gap: .35rem;
+    }
+    .cro-icon { font-size: 3rem; line-height: 1; }
+    .cro-name {
+      font-family: 'Mitr', sans-serif; font-size: 1.45rem; font-weight: 500;
+      color: #fff; line-height: 1.25;
+      text-shadow: 0 2px 10px rgba(0,0,0,.85);
+    }
+    .cro-hint {
+      font-size: .88rem; color: rgba(255,255,255,.82); line-height: 1.4;
+      text-shadow: 0 1px 5px rgba(0,0,0,.85);
+    }
+    .cro-footer {
+      background: var(--cream);
+      padding: 1rem 1.4rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .cro-brand {
+      font-family: 'Mitr', sans-serif; font-size: .82rem;
+      color: var(--brown-lt); letter-spacing: .03em;
+    }
+    .cro-close {
+      background: rgba(0,0,0,.06); border: none; cursor: pointer;
+      font-family: 'Sarabun', sans-serif; font-size: .85rem;
+      color: var(--brown); padding: .4rem .9rem;
+      border-radius: 99px; transition: background .2s;
+    }
+    .cro-close:hover { background: rgba(0,0,0,.12); }
 
     /* Colour palette for card fronts */
     .color-0 { background: linear-gradient(135deg, #f2a8a8, #e87c7c); }
@@ -1193,12 +1268,6 @@
       <div class="carousel-track" id="carouselTrack"></div>
     </div>
 
-    <div class="result-toast" id="resultToast">
-      <div class="toast-label">กิจกรรมของคุณคือ</div>
-      <div class="toast-icon" id="toastIcon"></div>
-      <div class="toast-name" id="toastName"></div>
-    </div>
-
     <div class="btn-row">
       <button class="btn-pick" id="cardBtn" onclick="spinCarousel()">🎴 สุ่มไพ่!</button>
       <button class="btn-reset" onclick="resetCarousel()">↺ เริ่มใหม่</button>
@@ -1488,16 +1557,22 @@ function buildCarousel() {
   carouselPool.forEach((act, i) => {
     const card = document.createElement('div');
     card.className = 'c-card';
-    card.innerHTML = `
-      <div class="c-card-face c-back">
-        <span class="c-icon">🌸</span>
-        <div class="c-pattern"></div>
-      </div>
-      <div class="c-card-face c-front color-${i % 12}">
+    const front = document.createElement('div');
+    front.className = 'c-card-face c-front';
+    if (act.photo) front.style.backgroundImage = `url('${act.photo}')`;
+    else front.style.background = `linear-gradient(135deg,var(--color-${i%12}-a,#e8a0a0),var(--color-${i%12}-b,#c07070))`;
+    front.innerHTML = `
+      <div class="c-photo-text">
         <div class="c-act-icon">${act.icon}</div>
         <div class="c-act-name">${act.name}</div>
         <div class="c-act-hint">${act.hint}</div>
       </div>`;
+    card.innerHTML = `
+      <div class="c-card-face c-back">
+        <span class="c-icon">🌸</span>
+        <div class="c-pattern"></div>
+      </div>`;
+    card.appendChild(front);
     card.addEventListener('click', spinCarousel);
     track.appendChild(card);
   });
@@ -1558,25 +1633,35 @@ function onCarouselStop() {
   setTimeout(() => {
     winner.classList.add('flipped');
 
-    // Float the card up after the flip lands
+    // Add winner glow then pop the overlay
     setTimeout(() => {
       winner.classList.add('winner');
-
-      // Show toast
+      const act = carouselPool[carouselWinIdx];
       setTimeout(() => {
-        const act = carouselPool[carouselWinIdx];
-        document.getElementById('toastIcon').textContent = act.icon;
-        document.getElementById('toastName').textContent = act.name;
-        document.getElementById('resultToast').classList.add('visible');
+        showCardResult(act);
         document.getElementById('cardBtn').disabled = false;
         carouselRunning = false;
-      }, 350);
+      }, 300);
     }, 580);
   }, 180);
 }
 
+function showCardResult(act) {
+  const overlay = document.getElementById('cardResultOverlay');
+  document.getElementById('croPhoto').style.backgroundImage = act.photo ? `url('${act.photo}')` : '';
+  document.getElementById('croIcon').textContent = act.icon;
+  document.getElementById('croName').textContent = act.name;
+  document.getElementById('croHint').textContent = act.hint;
+  overlay.classList.add('visible');
+}
+
+function closeCardResult() {
+  document.getElementById('cardResultOverlay').classList.remove('visible');
+}
+
 function resetCarousel() {
   if (carouselAnimId) { cancelAnimationFrame(carouselAnimId); carouselAnimId = null; }
+  closeCardResult();
   buildCarousel();
 }
 
@@ -2735,5 +2820,22 @@ function onSlideStop() {
   }, 550);
 }
 </script>
+<!-- ── Shareable card result overlay (card carousel mode) ──────── -->
+<div id="cardResultOverlay" class="card-result-overlay">
+  <div class="cro-backdrop" onclick="closeCardResult()"></div>
+  <div class="cro-card">
+    <div class="cro-photo" id="croPhoto">
+      <div class="cro-photo-text">
+        <div class="cro-icon" id="croIcon"></div>
+        <div class="cro-name" id="croName"></div>
+        <div class="cro-hint" id="croHint"></div>
+      </div>
+    </div>
+    <div class="cro-footer">
+      <div class="cro-brand">🌸 HealJai · กิจกรรมของคุณวันนี้</div>
+      <button class="cro-close" onclick="closeCardResult()">✕ ปิด</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
