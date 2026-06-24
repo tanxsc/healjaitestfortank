@@ -132,94 +132,113 @@
       text-align: center;
     }
 
-    /* Card grid */
-    .card-grid {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
-      width: 100%;
+    /* ─── CARD CAROUSEL ─────────────────────────────────────────── */
+
+    /* Scrolling viewport */
+    .carousel-wrap {
+      position: relative;
+      width: min(380px, 94vw);
+      height: 300px; /* 220 card + 60 float headroom + buffer */
+      overflow: hidden;
     }
 
-    /* Single card */
-    .card-wrap {
-      width: var(--card-w);
-      height: var(--card-h);
-      perspective: 900px;
-      cursor: pointer;
+    /* Side fade masks */
+    .carousel-wrap::before,
+    .carousel-wrap::after {
+      content: '';
+      position: absolute; top: 0; bottom: 0; width: 80px;
+      z-index: 4; pointer-events: none;
     }
-    .card-inner {
-      width: 100%; height: 100%;
+    .carousel-wrap::before { left: 0;  background: linear-gradient(to right, var(--cream) 15%, transparent); }
+    .carousel-wrap::after  { right: 0; background: linear-gradient(to left,  var(--cream) 15%, transparent); }
+
+    /* The sliding row of cards */
+    .carousel-track {
+      position: absolute;
+      bottom: 20px; /* breathing room below for float clearance */
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+      will-change: transform;
+    }
+
+    /* Each card — 3D flip context */
+    .c-card {
+      width: 160px; height: 220px;
+      flex-shrink: 0;
+      cursor: pointer;
       position: relative;
       transform-style: preserve-3d;
-      transition: transform .6s cubic-bezier(.4, 0, .2, 1);
-      border-radius: 18px;
-    }
-    .card-wrap.flipped .card-inner { transform: rotateY(180deg); }
-    .card-wrap.shake .card-inner  { animation: shake .3s ease; }
-    @keyframes shake {
-      0%,100% { transform: rotateY(0) translateX(0); }
-      25%      { transform: rotateY(0) translateX(-6px); }
-      75%      { transform: rotateY(0) translateX(6px); }
+      transition: transform .55s cubic-bezier(.4,0,.2,1),
+                  box-shadow .4s ease;
     }
 
-    .card-face {
-      position: absolute;
-      inset: 0;
+    /* Both faces share this base */
+    .c-card-face {
+      position: absolute; inset: 0;
       border-radius: 18px;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      text-align: center;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 1rem; text-align: center; gap: .5rem;
     }
 
-    /* Back of card (face-down) */
-    .card-back {
-      background: linear-gradient(135deg, #d4c4b8 0%, #c4b4a4 100%);
-      box-shadow: 0 4px 16px rgba(0,0,0,.12);
+    /* Card back (face-down) */
+    .c-back {
+      background: linear-gradient(135deg, #d4c4b8, #c4b4a4);
+      box-shadow: 0 4px 18px rgba(0,0,0,.13);
       border: 3px solid rgba(255,255,255,.5);
     }
-    .card-back .card-pattern {
-      width: 80%;
-      height: 80%;
+    .c-back .c-pattern {
+      width: 80%; height: 80%;
       border-radius: 10px;
       border: 2px solid rgba(255,255,255,.35);
-      background:
-        repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,.08) 6px, rgba(255,255,255,.08) 12px);
+      background: repeating-linear-gradient(
+        45deg, transparent, transparent 6px,
+        rgba(255,255,255,.08) 6px, rgba(255,255,255,.08) 12px);
     }
-    .card-back .card-icon {
-      position: absolute;
-      font-size: 2rem;
-      opacity: .5;
-    }
+    .c-back .c-icon { position: absolute; font-size: 2rem; opacity: .45; }
 
-    /* Front of card (activity revealed) */
-    .card-front {
+    /* Card front (activity) */
+    .c-front {
       transform: rotateY(180deg);
-      box-shadow: 0 6px 24px rgba(0,0,0,.15);
-      border: 3px solid rgba(255,255,255,.7);
-      flex-direction: column;
-      gap: .5rem;
+      border: 3px solid rgba(255,255,255,.72);
     }
-    .card-front .activity-icon { font-size: 2.4rem; }
-    .card-front .activity-name {
+    .c-front .c-act-icon { font-size: 2.4rem; }
+    .c-front .c-act-name {
       font-family: 'Mitr', sans-serif;
-      font-size: 1rem;
-      font-weight: 500;
-      line-height: 1.4;
-      color: white;
+      font-size: 1rem; font-weight: 500;
+      color: white; line-height: 1.35;
     }
-    .card-front .activity-hint {
-      font-size: .75rem;
-      color: rgba(255,255,255,.8);
-      line-height: 1.4;
+    .c-front .c-act-hint {
+      font-size: .75rem; color: rgba(255,255,255,.82); line-height: 1.4;
     }
 
-    /* Colour palette for fronts */
+    /* Flipped state — reveals front */
+    .c-card.flipped { transform: rotateY(180deg); }
+
+    /* Winner floats up after flip */
+    .c-card.flipped.winner {
+      transform: rotateY(180deg) translateY(-56px) scale(1.22);
+      box-shadow: 0 28px 72px rgba(0,0,0,.22);
+      z-index: 10;
+    }
+    /* Separate glow pulse on pseudo-element so transform isn't overridden by animation */
+    .c-card.flipped.winner::after {
+      content: '';
+      position: absolute; inset: -10px;
+      border-radius: 26px;
+      background: radial-gradient(ellipse at 50% 60%, rgba(242,160,160,.55), transparent 70%);
+      animation: winner-glow 2s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes winner-glow {
+      0%,100% { opacity: .5; transform: scale(1); }
+      50%      { opacity: 1;  transform: scale(1.08); }
+    }
+
+    /* Colour palette for card fronts */
     .color-0 { background: linear-gradient(135deg, #f2a8a8, #e87c7c); }
     .color-1 { background: linear-gradient(135deg, #a8d4a8, #6faf6f); }
     .color-2 { background: linear-gradient(135deg, #a8c4e8, #6f9fd4); }
@@ -1168,9 +1187,11 @@
   <!-- CARD FLIP MODE                                            -->
   <!-- ══════════════════════════════════════════════════════════ -->
   <section id="card-section">
-    <p class="instruction">แตะไพ่เพื่อพลิกดูกิจกรรม หรือกดปุ่มเพื่อสุ่ม!</p>
+    <p class="instruction">แตะไพ่หรือกดปุ่ม — ไพ่จะปัดผ่านแล้วหยุดที่กิจกรรมของคุณ!</p>
 
-    <div class="card-grid" id="cardGrid"></div>
+    <div class="carousel-wrap" id="carouselWrap">
+      <div class="carousel-track" id="carouselTrack"></div>
+    </div>
 
     <div class="result-toast" id="resultToast">
       <div class="toast-label">กิจกรรมของคุณคือ</div>
@@ -1179,8 +1200,8 @@
     </div>
 
     <div class="btn-row">
-      <button class="btn-pick" onclick="pickRandom()">🎲 สุ่มให้ฉัน!</button>
-      <button class="btn-reset" onclick="resetCards()">↺ เริ่มใหม่</button>
+      <button class="btn-pick" id="cardBtn" onclick="spinCarousel()">🎴 สุ่มไพ่!</button>
+      <button class="btn-reset" onclick="resetCarousel()">↺ เริ่มใหม่</button>
     </div>
   </section>
 
@@ -1428,10 +1449,7 @@ function setMode(mode) {
 }
 
 // ─── CARD FLIP ────────────────────────────────────────────────────
-const grid = document.getElementById('cardGrid');
-let flippedIndex = null;
-
-// Shuffle array
+// ─── CARD CAROUSEL ───────────────────────────────────────────────
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -1441,80 +1459,128 @@ function shuffle(arr) {
   return a;
 }
 
-let shuffled = shuffle(activities);
+const C_W = 160, C_GAP = 14, C_STEP = C_W + C_GAP; // 174px per card
+const POOL = 60; // 5 shuffled copies of activities
 
-function buildCards() {
-  grid.innerHTML = '';
-  shuffled = shuffle(activities);
-  flippedIndex = null;
+let carouselPool    = [];
+let carouselOffset  = 0;
+let carouselAnimId  = null;
+let carouselRunning = false;
+let carouselWinIdx  = -1;
+
+function carouselCenter() {
+  return (document.getElementById('carouselWrap').offsetWidth || 360) / 2;
+}
+function offsetForCard(idx) {
+  return carouselCenter() - (idx * C_STEP + C_W / 2);
+}
+function setCarouselX(x) {
+  document.getElementById('carouselTrack').style.transform = `translateX(${x}px)`;
+}
+
+function buildCarousel() {
+  const track = document.getElementById('carouselTrack');
+  // Build pool of 5 shuffled repetitions
+  carouselPool = [];
+  for (let r = 0; r < 5; r++) carouselPool.push(...shuffle(activities));
+
+  track.innerHTML = '';
+  carouselPool.forEach((act, i) => {
+    const card = document.createElement('div');
+    card.className = 'c-card';
+    card.innerHTML = `
+      <div class="c-card-face c-back">
+        <span class="c-icon">🌸</span>
+        <div class="c-pattern"></div>
+      </div>
+      <div class="c-card-face c-front color-${i % 12}">
+        <div class="c-act-icon">${act.icon}</div>
+        <div class="c-act-name">${act.name}</div>
+        <div class="c-act-hint">${act.hint}</div>
+      </div>`;
+    card.addEventListener('click', spinCarousel);
+    track.appendChild(card);
+  });
+
+  carouselRunning = false;
+  carouselWinIdx  = -1;
+  const startIdx  = 8;
+  carouselOffset  = offsetForCard(startIdx);
+  setCarouselX(carouselOffset);
+  document.getElementById('resultToast').classList.remove('visible');
+  document.getElementById('cardBtn').disabled = false;
+}
+
+function spinCarousel() {
+  if (carouselRunning) return;
+  carouselRunning = true;
+  document.getElementById('cardBtn').disabled = true;
   document.getElementById('resultToast').classList.remove('visible');
 
-  shuffled.forEach((act, i) => {
-    const wrap = document.createElement('div');
-    wrap.className = 'card-wrap';
-    wrap.dataset.index = i;
-    wrap.innerHTML = `
-      <div class="card-inner">
-        <div class="card-face card-back">
-          <span class="card-icon">🌸</span>
-          <div class="card-pattern"></div>
-        </div>
-        <div class="card-face card-front color-${i % 12}">
-          <div class="activity-icon">${act.icon}</div>
-          <div class="activity-name">${act.name}</div>
-          <div class="activity-hint">${act.hint}</div>
-        </div>
-      </div>`;
-    wrap.addEventListener('click', () => flipCard(wrap, i));
-    grid.appendChild(wrap);
-  });
-}
+  // Clear previous winner
+  document.querySelectorAll('#carouselTrack .c-card.winner')
+    .forEach(c => c.classList.remove('winner', 'flipped'));
 
-function flipCard(wrap, i) {
-  if (wrap.classList.contains('flipped')) return;
-  // Reset previously flipped card if different
-  if (flippedIndex !== null && flippedIndex !== i) {
-    const prev = grid.querySelector(`.card-wrap[data-index="${flippedIndex}"]`);
-    if (prev) {
-      prev.classList.remove('flipped');
-      // tiny delay so they don't flip back simultaneously
+  // Pick winner deep in the pool (last 30%)
+  const winIdx = Math.floor(POOL * 0.6 + Math.random() * POOL * 0.3);
+  carouselWinIdx = winIdx;
+
+  const targetX  = offsetForCard(winIdx);
+  const startX   = carouselOffset;
+  const dist     = targetX - startX;
+  const duration = 2200 + Math.random() * 700;
+  let   t0       = null;
+
+  function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
+
+  function animate(ts) {
+    if (!t0) t0 = ts;
+    const t = Math.min((ts - t0) / duration, 1);
+    carouselOffset = startX + dist * easeOutQuart(t);
+    setCarouselX(carouselOffset);
+    if (t < 1) {
+      carouselAnimId = requestAnimationFrame(animate);
+    } else {
+      carouselOffset = targetX;
+      setCarouselX(carouselOffset);
+      onCarouselStop();
     }
   }
-  wrap.classList.add('flipped');
-  flippedIndex = i;
-  showToast(shuffled[i]);
+  carouselAnimId = requestAnimationFrame(animate);
 }
 
-function showToast(act) {
-  const toast = document.getElementById('resultToast');
-  document.getElementById('toastIcon').textContent = act.icon;
-  document.getElementById('toastName').textContent = act.name;
-  toast.classList.add('visible');
-  toast.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
+function onCarouselStop() {
+  const cards  = document.querySelectorAll('#carouselTrack .c-card');
+  const winner = cards[carouselWinIdx];
+  if (!winner) return;
 
-function pickRandom() {
-  // Reset all
-  grid.querySelectorAll('.card-wrap.flipped').forEach(w => w.classList.remove('flipped'));
-  const cards = grid.querySelectorAll('.card-wrap');
-  const pick = Math.floor(Math.random() * cards.length);
+  // Flip card face-up
   setTimeout(() => {
-    const target = cards[pick];
-    // Highlight with a little wiggle first
-    target.classList.add('shake');
+    winner.classList.add('flipped');
+
+    // Float the card up after the flip lands
     setTimeout(() => {
-      target.classList.remove('shake');
-      flipCard(target, parseInt(target.dataset.index));
-    }, 350);
-    target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, 100);
+      winner.classList.add('winner');
+
+      // Show toast
+      setTimeout(() => {
+        const act = carouselPool[carouselWinIdx];
+        document.getElementById('toastIcon').textContent = act.icon;
+        document.getElementById('toastName').textContent = act.name;
+        document.getElementById('resultToast').classList.add('visible');
+        document.getElementById('cardBtn').disabled = false;
+        carouselRunning = false;
+      }, 350);
+    }, 580);
+  }, 180);
 }
 
-function resetCards() {
-  buildCards();
+function resetCarousel() {
+  if (carouselAnimId) { cancelAnimationFrame(carouselAnimId); carouselAnimId = null; }
+  buildCarousel();
 }
 
-buildCards();
+buildCarousel();
 
 // ─── SPIN WHEEL ───────────────────────────────────────────────────
 // ─── FERRIS WHEEL ────────────────────────────────────────────────
