@@ -494,9 +494,18 @@
       justify-content: center;
       gap: 4px;
       flex-shrink: 0;
+      position: relative;
+      background-size: cover;
+      background-position: center;
     }
-    .slot-item .s-icon { font-size: 2rem; line-height: 1; }
-    .slot-item .s-name { font-size: .65rem; color: var(--brown); text-align: center; line-height: 1.3; padding: 0 6px; }
+    .slot-item::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,.38);
+      pointer-events: none;
+    }
+    .slot-item .s-icon { font-size: 2rem; line-height: 1; position: relative; z-index: 1; filter: drop-shadow(0 1px 4px rgba(0,0,0,.7)); }
+    .slot-item .s-name { font-size: .65rem; color: white; text-shadow: 0 1px 3px rgba(0,0,0,.9); text-align: center; line-height: 1.3; padding: 0 6px; position: relative; z-index: 1; }
 
     /* Centre highlight line */
     .slot-highlight {
@@ -552,7 +561,18 @@
       gap: .5rem;
       padding: 1.5rem;
       text-align: center;
+      background-size: cover;
+      background-position: center;
     }
+    .scratch-reveal::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.72) 0%, rgba(0,0,0,.3) 100%);
+      pointer-events: none;
+    }
+    .scratch-reveal .sr-icon,
+    .scratch-reveal .sr-name,
+    .scratch-reveal .sr-hint { position: relative; z-index: 1; }
     .scratch-reveal .sr-icon { font-size: 3rem; }
     .scratch-reveal .sr-name {
       font-family: 'Mitr', sans-serif;
@@ -670,25 +690,38 @@
       align-items: center;
       gap: 6px;
       text-align: center;
-      width: 180px;
+      width: 150px;
+      height: 150px;
+      border-radius: 18px;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+      background-color: var(--pink);
+      box-shadow: 0 8px 28px rgba(0,0,0,.25);
       transition: transform .5s cubic-bezier(.34, 1.56, .64, 1) .35s, opacity .4s ease .35s;
       opacity: 0;
+      pointer-events: none;
+      justify-content: center;
+    }
+    .lucky-pop::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.65) 0%, rgba(0,0,0,.15) 100%);
       pointer-events: none;
     }
     .lucky-pop.visible {
       transform: translateX(-50%) scale(1) translateY(-20px);
       opacity: 1;
     }
-    .lucky-pop .lp-icon { font-size: 3rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,.2)); }
+    .lucky-pop .lp-icon { font-size: 2.4rem; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); position: relative; z-index: 1; }
     .lucky-pop .lp-name {
       font-family: 'Mitr', sans-serif;
-      font-size: 1rem;
-      color: var(--brown);
-      background: white;
-      padding: .3rem .8rem;
-      border-radius: 99px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.12);
+      font-size: .85rem;
+      color: white;
+      text-shadow: 0 1px 4px rgba(0,0,0,.9);
+      padding: 0 .6rem;
       line-height: 1.4;
+      position: relative; z-index: 1;
     }
     /* Sparkles */
     .sparkle {
@@ -1524,6 +1557,7 @@ for (let i = 0; i < 18; i++) {
 // ─── Mode switching ───────────────────────────────────────────────
 const MODES = ['card', 'wheel', 'slot', 'scratch', 'lucky', 'dice', 'slide', 'fortune'];
 function setMode(mode) {
+  closeCardResult();
   MODES.forEach(m => {
     document.getElementById(m + '-section').classList.toggle('hidden', m !== mode);
     document.getElementById('btn-mode-' + m).classList.toggle('active', m === mode);
@@ -1998,6 +2032,7 @@ function showWheelResult() {
   document.getElementById('wheelIcon').textContent = act.icon;
   document.getElementById('wheelName').textContent = act.name;
   document.getElementById('wheelResult').classList.add('visible');
+  showCardResult(act);
 }
 
 // Draw initial state when mode is opened
@@ -2025,6 +2060,7 @@ function buildSlot() {
     pool.forEach(act => {
       const item = document.createElement('div');
       item.className = 'slot-item';
+      if (act.photo) item.style.backgroundImage = `url('${act.photo}')`;
       item.innerHTML = `<div class="s-icon">${act.icon}</div><div class="s-name">${act.name}</div>`;
       reel.appendChild(item);
     });
@@ -2076,10 +2112,8 @@ function spinSlot() {
         if (idx === reelCount - 1) {
           setTimeout(() => {
             slotSpinning = false;
-            document.getElementById('slotIcon').textContent = slotPicked.icon;
-            document.getElementById('slotName').textContent = slotPicked.name;
-            document.getElementById('slotResult').classList.add('visible');
             document.getElementById('slotBtn').disabled = false;
+            showCardResult(slotPicked);
           }, 700);
         }
       }, (1.2 + idx * 0.3) * 1000 + delays[idx]);
@@ -2088,6 +2122,7 @@ function spinSlot() {
 }
 
 function resetSlot() {
+  closeCardResult();
   buildSlot();
 }
 
@@ -2111,6 +2146,7 @@ function resetScratch() {
 
   const reveal = document.getElementById('scratchReveal');
   reveal.className = 'scratch-reveal color-' + colorIdx;
+  reveal.style.backgroundImage = scratchAct.photo ? `url('${scratchAct.photo}')` : '';
   document.getElementById('scratchIcon').textContent = scratchAct.icon;
   document.getElementById('scratchName').textContent = scratchAct.name;
   document.getElementById('scratchHint').textContent = scratchAct.hint;
@@ -2176,6 +2212,7 @@ function doScratch(e) {
       ctx.globalCompositeOperation = 'destination-out';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       document.getElementById('scratchPct').textContent = '🎉 เปิดเผยแล้ว!';
+      setTimeout(() => showCardResult(scratchAct), 500);
     }, 300);
   }
 }
@@ -2188,6 +2225,7 @@ function revealAll() {
   ctx.globalCompositeOperation = 'destination-out';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   document.getElementById('scratchPct').textContent = '🎉 เปิดเผยแล้ว!';
+  setTimeout(() => showCardResult(scratchAct), 500);
 }
 
 // ─── LUCKY DIP BOX ───────────────────────────────────────────────
@@ -2201,8 +2239,8 @@ function resetBox() {
   document.getElementById('luckyPop').classList.remove('visible');
   document.getElementById('luckyResult').classList.remove('visible');
   document.getElementById('luckyBox').style.cursor = 'pointer';
-  // Remove any old sparkles
   document.querySelectorAll('.sparkle').forEach(s => s.remove());
+  closeCardResult();
 }
 
 function openBox() {
@@ -2241,17 +2279,13 @@ function openBox() {
 
   // Pop item out of box
   const pop = document.getElementById('luckyPop');
+  if (luckyAct.photo) pop.style.backgroundImage = `url('${luckyAct.photo}')`;
   document.getElementById('luckyPopIcon').textContent = luckyAct.icon;
   document.getElementById('luckyPopName').textContent = luckyAct.name;
   setTimeout(() => pop.classList.add('visible'), 400);
 
-  // Show toast
-  setTimeout(() => {
-    document.getElementById('luckyIcon').textContent = luckyAct.icon;
-    document.getElementById('luckyName').textContent = luckyAct.name;
-    document.getElementById('luckyHint').textContent = luckyAct.hint;
-    document.getElementById('luckyResult').classList.add('visible');
-  }, 900);
+  // Show result overlay
+  setTimeout(() => showCardResult(luckyAct), 1000);
 }
 
 // ─── DICE ROLL (realistic) ────────────────────────────────────────
@@ -2326,6 +2360,7 @@ function resetDice() {
     el.classList.remove('visible');
     el.textContent = '';
   });
+  closeCardResult();
 }
 
 function rollDice() {
@@ -2388,6 +2423,7 @@ function rollDice() {
     document.getElementById('diceActIcon').classList.add('visible');
     document.getElementById('diceActName').classList.add('visible');
     document.getElementById('diceActHint').classList.add('visible');
+    showCardResult(act);
   }, 2250);
 }
 
@@ -2740,6 +2776,7 @@ function ftSelectNumber(idx) {
     document.getElementById('fortuneHint').textContent = act.hint;
     document.getElementById('fortuneResult').classList.add('visible');
     document.getElementById('ftInstruction').textContent = '🎉 นี่คือกิจกรรมของคุณ!';
+    showCardResult(act);
   }, 250);
 }
 
@@ -2752,6 +2789,7 @@ function resetFortune() {
   ftActivities2 = shuffle(activities).slice(0, 4);
   document.getElementById('ftInstruction').textContent = 'แตะสีที่ชอบเพื่อเริ่ม!';
   document.getElementById('fortuneResult').classList.remove('visible');
+  closeCardResult();
   const c = document.getElementById('fortuneCanvas');
   if (c) { c.style.cursor = 'default'; drawFortune(0); }
 }
@@ -2803,6 +2841,7 @@ function resetSlide() {
   setSlideTranslate(slideOffset);
   document.getElementById('slideResult').classList.remove('visible');
   document.getElementById('slideBtn').disabled = false;
+  closeCardResult();
 
   // Un-highlight any previous winner
   document.querySelectorAll('.slide-card.winner').forEach(c => c.classList.remove('winner'));
@@ -2860,12 +2899,10 @@ function onSlideStop() {
   const cards = document.querySelectorAll('.slide-card');
   if (cards[slideWinnerIdx]) cards[slideWinnerIdx].classList.add('winner');
 
-  // Show toast
+  // Show result
   setTimeout(() => {
-    document.getElementById('slideResultIcon').textContent = slideWinner.icon;
-    document.getElementById('slideResultName').textContent = slideWinner.name;
-    document.getElementById('slideResult').classList.add('visible');
     document.getElementById('slideBtn').disabled = false;
+    showCardResult(slideWinner);
   }, 550);
 }
 </script>
