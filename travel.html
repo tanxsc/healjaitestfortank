@@ -1582,7 +1582,7 @@ function buildCarousel() {
   const startIdx  = 8;
   carouselOffset  = offsetForCard(startIdx);
   setCarouselX(carouselOffset);
-  document.getElementById('resultToast').classList.remove('visible');
+  closeCardResult();
   document.getElementById('cardBtn').disabled = false;
 }
 
@@ -1590,7 +1590,7 @@ function spinCarousel() {
   if (carouselRunning) return;
   carouselRunning = true;
   document.getElementById('cardBtn').disabled = true;
-  document.getElementById('resultToast').classList.remove('visible');
+  closeCardResult();
 
   // Clear previous winner
   document.querySelectorAll('#carouselTrack .c-card.winner')
