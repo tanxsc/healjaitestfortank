@@ -1469,6 +1469,24 @@
   <a class="back-link" href="index.html">← กลับแผนที่</a>
 </div>
 
+<!-- ── Shareable card result overlay (card carousel mode) ──────── -->
+<div id="cardResultOverlay" class="card-result-overlay">
+  <div class="cro-backdrop" onclick="closeCardResult()"></div>
+  <div class="cro-card">
+    <div class="cro-photo" id="croPhoto">
+      <div class="cro-photo-text">
+        <div class="cro-icon" id="croIcon"></div>
+        <div class="cro-name" id="croName"></div>
+        <div class="cro-hint" id="croHint"></div>
+      </div>
+    </div>
+    <div class="cro-footer">
+      <div class="cro-brand">🌸 HealJai · กิจกรรมของคุณวันนี้</div>
+      <button class="cro-close" onclick="closeCardResult()">✕ ปิด</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ─── Activity data ───────────────────────────────────────────────
 const activities = [
@@ -2851,22 +2869,5 @@ function onSlideStop() {
   }, 550);
 }
 </script>
-<!-- ── Shareable card result overlay (card carousel mode) ──────── -->
-<div id="cardResultOverlay" class="card-result-overlay">
-  <div class="cro-backdrop" onclick="closeCardResult()"></div>
-  <div class="cro-card">
-    <div class="cro-photo" id="croPhoto">
-      <div class="cro-photo-text">
-        <div class="cro-icon" id="croIcon"></div>
-        <div class="cro-name" id="croName"></div>
-        <div class="cro-hint" id="croHint"></div>
-      </div>
-    </div>
-    <div class="cro-footer">
-      <div class="cro-brand">🌸 HealJai · กิจกรรมของคุณวันนี้</div>
-      <button class="cro-close" onclick="closeCardResult()">✕ ปิด</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
